@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/jogo.py": {
+      "includeFiles": "{*.py,dados/**}",
+      "maxDuration": 15
+    }
+  }
+}

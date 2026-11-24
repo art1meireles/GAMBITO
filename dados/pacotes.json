@@ -1,0 +1,14 @@
+{
+  "pacote_inicial": {"nome": "Pacote Inicial", "preco": 0, "opcoes": 3, "loja": false, "probabilidades": {"comum": 100, "incomum": 0, "rara": 0, "epica": 0, "lendaria": 0}},
+  "bau_do_rei": {"nome": "Baú do Rei", "preco": 4, "opcoes": 3, "loja": true, "probabilidades": {"comum": 70, "incomum": 20, "rara": 8, "epica": 1.8, "lendaria": 0.2}},
+  "expresso_hikaru": {"nome": "Expresso Hikaru", "preco": 5, "opcoes": 3, "loja": true, "probabilidades": {"comum": 60, "incomum": 25, "rara": 11, "epica": 3.5, "lendaria": 0.5}},
+  "pacote_zugzwang": {"nome": "Pacote Zugzwang", "preco": 6, "opcoes": 3, "loja": true, "probabilidades": {"comum": 50, "incomum": 28, "rara": 15, "epica": 6, "lendaria": 1}},
+  "registros_de_philidor": {"nome": "Registros de Philidor", "preco": 7, "opcoes": 3, "loja": true, "probabilidades": {"comum": 42, "incomum": 30, "rara": 18, "epica": 8, "lendaria": 2}},
+  "pacote_capablanca": {"nome": "Pacote Capablanca", "preco": 8, "opcoes": 3, "loja": true, "probabilidades": {"comum": 35, "incomum": 30, "rara": 22, "epica": 10, "lendaria": 3}},
+  "ataque_sovietico": {"nome": "Ataque Soviético", "preco": 9, "opcoes": 3, "loja": true, "probabilidades": {"comum": 28, "incomum": 30, "rara": 24, "epica": 13, "lendaria": 5}},
+  "sacrificio_de_tal": {"nome": "Sacrifício de Tal", "preco": 10, "opcoes": 3, "loja": true, "probabilidades": {"comum": 20, "incomum": 28, "rara": 27, "epica": 17, "lendaria": 8}},
+  "bencao_de_caissa": {"nome": "Bênção de Caíssa", "preco": 12, "opcoes": 3, "loja": true, "probabilidades": {"comum": 15, "incomum": 25, "rara": 28, "epica": 20, "lendaria": 12}},
+  "lembrancas_de_kasparov": {"nome": "Lembranças de Kasparov", "preco": 14, "opcoes": 3, "loja": true, "probabilidades": {"comum": 10, "incomum": 22, "rara": 28, "epica": 24, "lendaria": 16}},
+  "segredo_de_carlsen": {"nome": "Segredo de Carlsen", "preco": 17, "opcoes": 3, "loja": true, "probabilidades": {"comum": 5, "incomum": 15, "rara": 25, "epica": 30, "lendaria": 25}},
+  "pacote_imortal": {"nome": "Pacote Imortal", "preco": 20, "opcoes": 3, "loja": true, "probabilidades": {"comum": 0, "incomum": 10, "rara": 20, "epica": 30, "lendaria": 40}}
+}

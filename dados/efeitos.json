@@ -1,0 +1,22 @@
+{
+  "escudo": {
+    "icone": "◈",
+    "desc": "Absorve {valor} captura(s) sofrida(s) (o atacante não se move)."
+  },
+  "explodir_ao_ser_capturado": {
+    "icone": "✹",
+    "desc": "Ao ser capturado, destrói também o atacante."
+  },
+  "moedas_ao_capturar": {
+    "icone": "$",
+    "desc": "Ganha {valor} moeda(s) ao capturar uma peça."
+  },
+  "moedas_fim_batalha": {
+    "icone": "+",
+    "desc": "Ganha {valor} moeda(s) no fim da batalha se sobreviver."
+  },
+  "explosao_ao_capturar": {
+    "icone": "✷",
+    "desc": "Ao capturar, destrói as peças inimigas vizinhas ao destino."
+  }
+}

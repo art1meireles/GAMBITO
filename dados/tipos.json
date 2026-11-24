@@ -1,0 +1,26 @@
+{
+  "P": {
+    "nome": "Peão",
+    "valor": 1
+  },
+  "N": {
+    "nome": "Cavalo",
+    "valor": 3
+  },
+  "B": {
+    "nome": "Bispo",
+    "valor": 3
+  },
+  "R": {
+    "nome": "Torre",
+    "valor": 5
+  },
+  "Q": {
+    "nome": "Rainha",
+    "valor": 9
+  },
+  "K": {
+    "nome": "Rei",
+    "valor": 3
+  }
+}

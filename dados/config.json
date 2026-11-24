@@ -1,0 +1,19 @@
+{
+  "tamanho_exercito": 4,
+  "max_rodadas": 40,
+  "moedas_iniciais": 5,
+  "tamanhos_tabuleiro": [
+    5,
+    6,
+    7
+  ],
+  "recompensa_base": 2,
+  "bonus_max_por_velocidade": 4,
+  "penalidade_max_por_lentidao": 6,
+  "ofertas_na_loja": 3,
+  "preco_misteriosa": 4,
+  "custo_inicial_troca": 1,
+  "espacos_cartas": 3,
+  "max_consumiveis": 3,
+  "pacotes_na_loja": 3
+}

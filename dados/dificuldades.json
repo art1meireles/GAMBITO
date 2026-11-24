@@ -1,0 +1,26 @@
+{
+  "facil": {
+    "inteligencia": 0.4,
+    "nome": "Fácil",
+    "media": 13,
+    "batalhas": 6,
+    "extra_inimigos": 0,
+    "mult_moedas": 1.0
+  },
+  "normal": {
+    "inteligencia": 0.7,
+    "nome": "Normal",
+    "media": 15,
+    "batalhas": 8,
+    "extra_inimigos": 0,
+    "mult_moedas": 1.25
+  },
+  "dificil": {
+    "inteligencia": 1.0,
+    "nome": "Difícil",
+    "media": 17,
+    "batalhas": 10,
+    "extra_inimigos": 0,
+    "mult_moedas": 1.5
+  }
+}
