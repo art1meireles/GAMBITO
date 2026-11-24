@@ -116,6 +116,19 @@ def processar(corpo):
         return s
 
 
+def tratar_pedido(texto):
+    #Recebe o corpo (texto JSON) de um POST e devolve (código HTTP, resposta). Usado pelo servidor local e pela Vercel
+    try:
+        if len(texto) > 2_000_000:
+            raise ValueError('pedido grande demais')
+        corpo = json.loads(texto or b'{}')
+        if not isinstance(corpo, dict):
+            raise ValueError('requisição inválida')
+        return 200, processar(corpo)
+    except (ValueError, KeyError, TypeError, IndexError, AttributeError) as erro:
+        return 400, {'erro': str(erro) or 'requisição inválida'}
+
+
 class Servidor(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # silencia o log do terminal
@@ -134,16 +147,9 @@ class Servidor(BaseHTTPRequestHandler):
             self.responder(200, f.read(), tipo)
 
     def do_POST(self):
-        try:
-            tamanho = int(self.headers.get('Content-Length') or 0)
-            if tamanho > 2_000_000:
-                raise ValueError('pedido grande demais')
-            corpo = json.loads(self.rfile.read(tamanho) or b'{}')
-            if not isinstance(corpo, dict):
-                raise ValueError('requisição inválida')
-            self.responder(200, processar(corpo))
-        except (ValueError, KeyError, TypeError, IndexError, AttributeError) as erro:
-            self.responder(400, {'erro': str(erro) or 'requisição inválida'})
+        tamanho = int(self.headers.get('Content-Length') or 0)
+        codigo, resposta = tratar_pedido(self.rfile.read(tamanho))
+        self.responder(codigo, resposta)
 
 
 def iniciar(porta=8000):
