@@ -19,7 +19,10 @@ let telaAnterior = null;
 let larguraAnterior = window.innerWidth;
 
 //true em telas estreitas (celular em pé), onde o menu lateral vira uma faixa no topo
-function ehCelular() { return window.matchMedia('(max-width: 820px)').matches; }
+function ehCelular() { return window.matchMedia('(max-width: 820px), (pointer: coarse) and (orientation: portrait)').matches; }
+
+//no celular em pé, aumenta tudo conforme a largura da tela (1 = celular comum; maior = tela larga ou "site para computador")
+function escala() { return ehCelular() ? Math.min(2.4, Math.max(1, window.innerWidth / 400)) : 1; }
 
 function simbolo(tipo) { return SIMBOLO[tipo] + '︎'; } // ︎ evita virar emoji
 
@@ -79,9 +82,10 @@ function desenharTabuleiro(b) {
   const n = b.n;
   const posicionando = b.fase === 'posicionando';
   let largura;
-  if (ehCelular()) largura = Math.max(240, Math.min(window.innerWidth - 20, window.innerHeight - (posicionando ? 350 : 210), 600));
-  else if (window.innerHeight <= 520) largura = Math.max(220, Math.min(window.innerWidth - 330, window.innerHeight - (posicionando ? 200 : 110), 600));  //celular deitado
-  else largura = Math.max(280, Math.min(window.innerWidth - 380, window.innerHeight - (posicionando ? 330 : 200), 600));
+  const z = escala();
+  if (ehCelular()) largura = Math.max(240, Math.min(window.innerWidth - 16, window.innerHeight - (posicionando ? 350 : 210) * z, 900) / z);
+  else if (window.innerHeight <= 520) largura = Math.max(220, Math.min(window.innerWidth - 330, window.innerHeight - (posicionando ? 200 : 110), 760));  //celular deitado
+  else largura = Math.max(280, Math.min(window.innerWidth - 380, window.innerHeight - (posicionando ? 300 : 150), 760));
   const tam = largura / n;
   const mapa = {};
   b.pecas.forEach(p => mapa[p.linha + ',' + p.col] = p);
@@ -165,11 +169,12 @@ function lateral(titulo, info) {
     <div class="painel moedas"><span class="cifrao">$</span><span>${E.moedas}</span></div>
     <button class="bt azul peq lat-toggle" onclick="alternarLateral()">Cartas ${E.cartas.length + E.consumiveis.length}</button>
     <div class="lat-corpo">
-      ${painelCartas()}
       <div class="lat-botoes">
         <button class="bt laranja peq" onclick="verColecao=true;desenhar()">Coleção</button>
         <button class="bt vermelho peq" onclick="abandonar()">Abandonar</button>
-      </div></div></aside>`;
+      </div>
+      ${painelCartas()}
+    </div></aside>`;
 }
 
 //abre ou fecha o painel de cartas (só aparece no celular)
@@ -189,6 +194,7 @@ function comLateral(titulo, info, principal) {
 
 //---------- telas
 function desenhar() {
+  document.documentElement.style.setProperty('--z', escala());
   const topo = document.getElementById('topo');
   const tela = document.getElementById('tela');
   const noMenu = E.tela === 'menu' && !verColecao && !verComoJogar;
@@ -277,7 +283,7 @@ function telaPacote(tela) {
       <button class="bt cinza mini-bt" onclick="pendenteSubstituir=null;desenhar()">Cancelar</button></div>`;
   }
   html += `<button class="bt cinza" onclick="pendenteSubstituir=null;chamar('pular_pacote')">Pular pacote</button>`;
-  tela.innerHTML = comLateral('Pacote', infoGeral(), html);
+  tela.innerHTML = comLateral('Pacote', infoGeral(), `<div class="pacote-tela">${html}</div>`);
 }
 
 async function escolherOpcao(i) {
