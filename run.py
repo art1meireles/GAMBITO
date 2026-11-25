@@ -40,6 +40,14 @@ def sanear_partida():
         r['loja']['misteriosa'] = valida(r['loja']['misteriosa'])
 
 
+def niveis_da_maquina():
+    #Dificuldades que o modo de teste oferece: uma básica e uma para cada estágio do jogo
+    niveis = [{'nome': 'Básica', 'inteligencia': 0.0, 'olhar': 0}]
+    for e in dados.ESTAGIOS:
+        niveis.append({'nome': e['nome'], 'inteligencia': e['inteligencia'], 'olhar': e['olhar_a_frente']})
+    return niveis
+
+
 def montar_teste(d):
     #Modo de teste: monta uma batalha já em andamento com as peças e as posições escolhidas na tela de teste
     n = int(d['n'])
@@ -65,6 +73,13 @@ def montar_teste(d):
     b = estado.run['batalha']
     b['n'] = n
     b['modo_teste'] = True
+    niveis = niveis_da_maquina()
+    nivel = int(d.get('nivel', 1))
+    if not (0 <= nivel < len(niveis)):
+        raise ValueError('Dificuldade inválida')
+    b['inteligencia'] = niveis[nivel]['inteligencia']  # a máquina joga com a dificuldade escolhida
+    b['olhar'] = niveis[nivel]['olhar']
+    b['nivel_teste'] = niveis[nivel]['nome']
     b['pecas'] = []
     for id_, l, c in inimigos:
         modelo = dados.CATALOGO[id_]

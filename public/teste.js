@@ -1,17 +1,22 @@
 //Modo de teste: tela para montar um cenário (peças suas e inimigas no tabuleiro) e testar os efeitos. Só aparece com ?teste no endereço
 //As funções daqui são chamadas pelo app.js; este arquivo carrega antes dele, então nada roda fora de função
 
-let cenario = null;   //{n, pecas: [{lado, id, linha, col}], parado}
+let cenario = null;   //{n, pecas: [{lado, id, linha, col}], parado, nivel (posição em E.niveis_ia)}
 let paleta = { busca: '', tipo: '', escolhida: 'Q:comum', lado: 'j' };
 
 function garantirCenario() {
   if (cenario) return;
   const salvo = lerSalvo('gambito_teste_cenario');
   cenario = salvo && Array.isArray(salvo.pecas) ? salvo : {
-    n: 6, parado: false,
+    n: 6, parado: false, nivel: 1,
     pecas: [{ lado: 'j', id: 'Q:comum', linha: 5, col: 2 }, { lado: 'j', id: 'N:comum', linha: 5, col: 4 },
             { lado: 'i', id: 'P:comum', linha: 1, col: 1 }, { lado: 'i', id: 'P:comum', linha: 1, col: 3 }, { lado: 'i', id: 'N:comum', linha: 0, col: 2 }],
   };
+}
+
+function nivelValido() {
+  if (typeof cenario.nivel !== 'number' || cenario.nivel < 0 || cenario.nivel >= E.niveis_ia.length) cenario.nivel = 1;
+  return cenario.nivel;
 }
 
 function salvarCenario() { guardar('gambito_teste_cenario', cenario); }
@@ -34,6 +39,7 @@ function telaEditorTeste(tela) {
       <div class="teste-editor">
         <h3>2. Monte o cenário</h3>
         <div class="lista centro" id="t-opcoes"></div>
+        <div id="t-nivel" class="dica"></div>
         <div id="t-escolhida" class="dica"></div>
         <div id="t-tabuleiro"></div>
         <p class="dica">Clique numa casa vazia para colocar a peça escolhida. Clique numa peça para tirá-la.</p>
@@ -56,7 +62,11 @@ function redesenharOpcoes() {
   document.getElementById('t-opcoes').innerHTML =
     '<span class="rotulo">Tabuleiro</span>' + [5, 6, 7].map(n => botao(n + '×' + n, cenario.n === n, `mudarTamanho(${n})`)).join('') +
     '<span class="rotulo">Colocar como</span>' + botao('Minha peça', paleta.lado === 'j', "paleta.lado='j';redesenharOpcoes();redesenharTabuleiroTeste()") +
-    botao('Peça inimiga', paleta.lado === 'i', "paleta.lado='i';redesenharOpcoes();redesenharTabuleiroTeste()");
+    botao('Peça inimiga', paleta.lado === 'i', "paleta.lado='i';redesenharOpcoes();redesenharTabuleiroTeste()") +
+    '<br><span class="rotulo">Dificuldade da máquina</span>' +
+    E.niveis_ia.map((nv, i) => botao(nv.nome, nivelValido() === i, `mudarNivel(${i})`)).join('');
+  document.getElementById('t-nivel').innerHTML = (n => `${n.nome}: ${n.inteligencia === 0 ? 'captura quando pode e, senão, anda ao acaso' :
+    Math.round(n.inteligencia * 100) + '% das jogadas são escolhidas com cuidado' + (n.olhar >= 2 ? ', olhando 2 jogadas à frente' : '')}.`)(E.niveis_ia[nivelValido()]);
 }
 
 function redesenharPaleta() {
@@ -118,13 +128,15 @@ function mudarTamanho(n) {
   redesenharTabuleiroTeste();
 }
 
+function mudarNivel(i) { cenario.nivel = i; salvarCenario(); redesenharOpcoes(); }
+
 function limparCenario() { cenario.pecas = []; salvarCenario(); redesenharTabuleiroTeste(); }
 
 //---------- iniciar e repetir
 async function comecarTeste() {
   garantirCenario();
   salvarCenario();
-  if (!(await chamar('teste_montar', { n: cenario.n, pecas: cenario.pecas }))) return;
+  if (!(await chamar('teste_montar', { n: cenario.n, pecas: cenario.pecas, nivel: nivelValido() }))) return;
   if (cenario.parado) await chamar('teste_parado', { valor: true });
 }
 
@@ -152,7 +164,7 @@ function painelTeste() {
       <button class="bt laranja mini-bt" onclick="chamar('teste_avancar',{n:3})">Avançar 3 rodadas</button>
       <label class="teste-check"><input type="checkbox" ${t.parado ? 'checked' : ''} onchange="chamar('teste_parado',{valor:this.checked})"> Inimigo parado</label>
     </div>
-    <div class="teste-resumo">Moedas ganhas nesta batalha: <b>${t.bonus}</b> · Capturas seguidas: <b>${t.serie}</b> · Turnos: <b>${t.turnos}</b></div>
+    <div class="teste-resumo">Moedas ganhas nesta batalha: <b>${t.bonus}</b> · Capturas seguidas: <b>${t.serie}</b> · Turnos: <b>${t.turnos}</b> · Máquina: <b>${t.nivel}</b></div>
     <table class="teste-tabela"><tr><th>Lado</th><th>Peça</th><th>Casa</th><th>Escudo</th></tr>${linhas}</table></div>`;
 }
 

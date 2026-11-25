@@ -28,7 +28,7 @@ def estado_para_o_navegador():
     s = {'tela': 'menu', 'catalogo': dados.CATALOGO, 'efeitos': dados.EFEITOS, 'config': dados.CONFIG,
          'loja_chaves': dados.CHAVES_LOJA, 'colecao': colecao.dados_colecao,
          'cartas_catalogo': dados.CARTAS, 'pacotes': dados.PACOTES, 'raridades': dados.NOMES_RARIDADE,
-         'ordem_raridades': dados.RARIDADES}
+         'ordem_raridades': dados.RARIDADES, 'niveis_ia': run.niveis_da_maquina()}
     r = estado.run
     if r is None:
         return s
@@ -64,7 +64,7 @@ def estado_para_o_navegador():
                         'ameacas': ameacas, 'limite': limite, 'fase': b['fase'], 'vez': b['vez']}
         if b.get('modo_teste'):
             s['teste'] = {'bonus': b['bonus'], 'serie': b.get('serie', 0), 'turnos': b['turnos'],
-                          'parado': bool(b.get('inimigo_parado'))}
+                          'parado': bool(b.get('inimigo_parado')), 'nivel': b.get('nivel_teste', '')}
     return s
 
 
