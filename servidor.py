@@ -14,8 +14,8 @@ import pacotes
 import run
 import xadrez
 
-ARQUIVOS = {'/': ('index.html', 'text/html'), '/style.css': ('style.css', 'text/css'),
-            '/app.js': ('app.js', 'application/javascript')}
+TIPOS = {'.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.wav': 'audio/wav',
+         '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.png': 'image/png', '.ico': 'image/x-icon', '.svg': 'image/svg+xml'}
 TRAVA = threading.Lock()  # uma requisição por vez mexe no estado
 
 
@@ -137,13 +137,19 @@ class Servidor(BaseHTTPRequestHandler):
         if not isinstance(conteudo, bytes):
             conteudo = json.dumps(conteudo, ensure_ascii=False).encode('utf-8')
         self.send_response(codigo)
-        self.send_header('Content-Type', tipo + '; charset=utf-8')
+        self.send_header('Content-Type', tipo + ('; charset=utf-8' if tipo.startswith(('text/', 'application/')) else ''))
         self.end_headers()
         self.wfile.write(conteudo)
 
     def do_GET(self):
-        arquivo, tipo = ARQUIVOS.get(self.path, ('index.html', 'text/html'))
-        with open(os.path.join(dados.PASTA, 'public', arquivo), 'rb') as f:
+        #serve qualquer arquivo da pasta public/ (html, css, js, sons...)
+        pasta = os.path.realpath(os.path.join(dados.PASTA, 'public'))
+        pedido = self.path.split('?')[0].lstrip('/') or 'index.html'
+        caminho = os.path.realpath(os.path.join(pasta, pedido))
+        if not caminho.startswith(pasta + os.sep) or not os.path.isfile(caminho):
+            return self.responder(404, {'erro': 'arquivo não encontrado'})
+        tipo = TIPOS.get(os.path.splitext(caminho)[1].lower(), 'application/octet-stream')
+        with open(caminho, 'rb') as f:
             self.responder(200, f.read(), tipo)
 
     def do_POST(self):
