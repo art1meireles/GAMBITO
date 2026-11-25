@@ -9,6 +9,8 @@ def jogar(max_turnos=60):
     b = estado.run['batalha']
     while estado.run['tela'] == 'batalha' and max_turnos:
         max_turnos -= 1
+        if estado.run['batalha']['vez'] == 'inimigo':  #o inimigo joga primeiro
+            run.vez_do_inimigo(); continue
         s = servidor.estado_para_o_navegador()['batalha']
         js = s['jogadas']; ini = {(p['linha'], p['col']) for p in s['pecas'] if p['lado'] == 'i'}
         o = [(k, t) for k, ts in js.items() for t in ts]

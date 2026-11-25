@@ -56,7 +56,7 @@ As peças inimigas aparecem reveladas. As peças do jogador são colocadas na **
 
 ### Turnos
 
-O jogador move uma peça por turno, e a CPU responde 1 segundo depois. Cada jogada do jogador conta como uma **rodada**.
+Quem monta primeiro joga primeiro. Como o campo inimigo já está montado quando o jogador posiciona o exército, a CPU abre cada batalha. Depois o jogador move uma peça por turno, e a CPU responde 1 segundo depois. Cada jogada do jogador conta como uma **rodada**.
 
 Ao selecionar uma peça, o tabuleiro mostra as jogadas possíveis:
 - ponto verde: movimento;
@@ -156,6 +156,17 @@ A tela **Coleção** mostra as peças e cartas já descobertas (as que faltam ap
 
 **Onde fica o progresso:** a run e a coleção ficam guardadas no navegador (`localStorage`), e o servidor não guarda nada. Por isso cada navegador, cada aba anônima e cada endereço do site tem o seu próprio progresso, e limpar os dados do site zera tudo.
 
+## Modo Duelo
+
+O botão **DUELO** do menu abre uma partida local para dois jogadores no mesmo aparelho: **Azul** (embaixo) e **Vermelho** (em cima). O match tem 10 batalhas e não usa cartas nem moedas.
+
+- **Sorteio:** no início do match, 10 sorteios definem quem monta primeiro em cada batalha, e outro sorteio define quem bane primeiro. Quem monta primeiro usa 3/5, 4/6 ou 5/7 do tabuleiro (conforme o tamanho 5×5, 6×6 ou 7×7), monta sem ver o adversário e faz o primeiro movimento. Quem monta depois vê as peças do outro e usa as 2 últimas linhas do seu lado.
+- **Banimentos:** cada jogador bane até 5 peças, alternando e de forma pública. As peças banidas ficam fora do draft.
+- **Draft:** cada jogador tem 20 moedas e escolhe peças alternadamente, sem repetir peças, até 4 por exército. Quem baniu primeiro escolhe por último. Peças com efeito de moedas não aparecem. O exército vale para o match inteiro, e as peças perdidas voltam a cada batalha.
+- **Pontuação:** vitória vale 1 ponto e empate vale meio ponto para cada. Quem não tem jogada perde a vez, e se nenhum dos dois puder jogar ou o limite de 40 rodadas for atingido, a batalha empata. Vence o match quem tiver mais pontos, e a igualdade termina em empate.
+
+O match fica salvo no navegador e continua se a aba for fechada.
+
 ## Execução local
 
 O jogo roda localmente apenas com Python 3, sem pacotes externos:
@@ -168,7 +179,7 @@ O servidor local responde em `http://localhost:8000`.
 
 ### Modo de teste
 
-O endereço `http://localhost:8000/?teste` abre um modo para testar peças sem jogar uma run. A tela tem uma paleta com todas as peças da loja e um editor de tabuleiro (5×5, 6×6 ou 7×7), com dois lados, opções para **parar o inimigo** e **avançar turnos**. O modo de teste não altera a run nem a coleção.
+O endereço `http://localhost:8000/?teste` abre um modo para testar peças sem jogar uma run. A tela tem uma paleta com todas as peças da loja e um editor de tabuleiro (5×5, 6×6 ou 7×7), com dois lados, escolha da **dificuldade da máquina** (Básica ou a de cada estágio, do Iniciante ao GM) e opções para **parar o inimigo** e **avançar turnos**. O modo de teste não altera a run nem a coleção.
 
 ## Estrutura do projeto
 
@@ -177,6 +188,7 @@ gambito/
 ├── jogo.py              inicia o servidor local
 ├── servidor.py          recebe os cliques do navegador e devolve o estado
 ├── run.py               a run: batalhas, posicionamento, recompensas, modo de teste
+├── duelo.py             o modo Duelo: sorteio, banimentos, draft e batalhas
 ├── xadrez.py            movimentos, capturas e IA do inimigo
 ├── efeitos.py           o que cada bloco de efeito faz
 ├── cartas.py            efeitos das cartas permanentes, recompensa e preços
@@ -201,6 +213,7 @@ gambito/
 │   ├── index.html
 │   ├── app.js           a interface
 │   ├── teste.js         o modo de teste (?teste)
+│   ├── duelo.js         as telas do modo Duelo
 │   ├── style.css
 │   ├── favicon.*        ícone do site (a carta com o peão)
 │   └── sons/            piece1, piece2, promote, win e lose

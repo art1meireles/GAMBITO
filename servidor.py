@@ -8,6 +8,7 @@ import cartas
 import colecao
 import consumiveis
 import dados
+import duelo
 import estado
 import loja
 import pacotes
@@ -29,6 +30,9 @@ def estado_para_o_navegador():
          'loja_chaves': dados.CHAVES_LOJA, 'colecao': colecao.dados_colecao,
          'cartas_catalogo': dados.CARTAS, 'pacotes': dados.PACOTES, 'raridades': dados.NOMES_RARIDADE,
          'ordem_raridades': dados.RARIDADES, 'niveis_ia': run.niveis_da_maquina()}
+    if estado.duelo is not None:  #duelo em andamento: a tela é a do duelo
+        s.update({'tela': 'duelo', 'duelo': duelo.visao()})
+        return s
     r = estado.run
     if r is None:
         return s
@@ -68,6 +72,40 @@ def estado_para_o_navegador():
     return s
 
 
+def executar_duelo(acao, d):
+    if acao == 'duelo_novo':
+        duelo.novo()
+        return
+    if estado.duelo is None:
+        raise ValueError('Não há duelo em andamento')
+    if acao == 'duelo_sair':
+        duelo.sair()
+    elif acao == 'duelo_avancar':
+        duelo.avancar()
+    elif acao == 'duelo_banir':
+        duelo.banir(str(d['id']))
+    elif acao == 'duelo_fim_bans':
+        duelo.fim_bans()
+    elif acao == 'duelo_escolher':
+        duelo.escolher(str(d['id']))
+    elif acao == 'duelo_parar':
+        duelo.parar()
+    elif acao == 'duelo_colocar':
+        duelo.colocar(int(d['indice']), int(d['linha']), int(d['col']))
+    elif acao == 'duelo_tirar':
+        duelo.tirar(int(d['indice']))
+    elif acao == 'duelo_auto':
+        duelo.auto()
+    elif acao == 'duelo_pronto':
+        duelo.pronto()
+    elif acao == 'duelo_mover':
+        duelo.mover(list(map(int, d['de'])), list(map(int, d['para'])))
+    elif acao == 'duelo_proxima':
+        duelo.proxima()
+    else:
+        raise ValueError('Ação desconhecida')
+
+
 def executar(acao, d):
     if acao == 'novo':
         run.novo_jogo()
@@ -104,6 +142,8 @@ def executar(acao, d):
     elif acao == 'usar_carta':
         alvo = d.get('alvo')
         consumiveis.usar(int(d['indice']), None if alvo is None else int(alvo))
+    elif acao.startswith('duelo_'):
+        executar_duelo(acao, d)
     elif acao == 'teste_montar':
         run.montar_teste(d)
     elif acao == 'teste_parado':
@@ -119,17 +159,26 @@ def executar(acao, d):
 
 
 def processar(corpo):
-    #Recebe {acao, dados, run, colecao} do navegador, executa a ação e devolve o novo estado
+    #Recebe {acao, dados, run, colecao, duelo} do navegador, executa a ação e devolve o novo estado
     run_recebida = corpo.get('run')
     if run_recebida is not None and not isinstance(run_recebida, dict):
         raise ValueError('partida salva inválida')
+    acao = str(corpo.get('acao') or 'estado')
     with TRAVA:
-        estado.run = run_recebida
-        run.sanear_partida()
+        estado.duelo = duelo.sanear(corpo.get('duelo'))
+        em_duelo = estado.duelo is not None or acao == 'duelo_novo'
+        estado.run = None if em_duelo else run_recebida  #durante o duelo a run (se houver) fica guardada e não participa
+        if estado.run is not None:
+            run.sanear_partida()
         colecao.definir(corpo.get('colecao'))
-        executar(str(corpo.get('acao') or 'estado'), corpo.get('dados') or {})
+        executar(acao, corpo.get('dados') or {})
+        if estado.duelo is None and em_duelo:  #saiu do duelo: volta a run guardada
+            estado.run = run_recebida
+            if estado.run is not None:
+                run.sanear_partida()
         s = estado_para_o_navegador()
-        s['_run'] = estado.run  # o navegador guarda isto e manda de volta no próximo pedido
+        s['_run'] = run_recebida if estado.duelo is not None else estado.run  # o navegador guarda isto e manda de volta no próximo pedido
+        s['_duelo'] = estado.duelo
         return s
 
 

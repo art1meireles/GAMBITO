@@ -129,7 +129,7 @@ def movimentos(pecas, p, n):
 def mover(batalha, p, linha, col):
     #Executa o movimento da peça p, chama os efeitos (da peça e das cartas) e escreve no log
     pecas, n = batalha['pecas'], batalha['n']
-    quem = 'Você' if p['lado'] == 'j' else 'Inimigo'
+    quem = batalha.get('nomes', {}).get(p['lado']) or ('Você' if p['lado'] == 'j' else 'Inimigo')  #no duelo: Azul e Vermelho
     texto = f"{quem}: {nome_da_peca(p)} {casa(p['linha'], p['col'], n)}→{casa(linha, col, n)}"
     alvo = peca_em(pecas, linha, col)
     if alvo and alvo['lado'] == p['lado']:  # troca de lugar com um aliado

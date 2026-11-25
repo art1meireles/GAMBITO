@@ -10,6 +10,7 @@ const MOMENTOS = {
 const modoTeste = new URLSearchParams(location.search).has('teste');
 const CHAVE_RUN = modoTeste ? 'gambito_teste_run' : 'gambito_run';
 const CHAVE_COLECAO = modoTeste ? 'gambito_teste_colecao' : 'gambito_colecao';
+const CHAVE_DUELO = modoTeste ? 'gambito_teste_duelo' : 'gambito_duelo';
 let E = null;                  // estado vindo do servidor
 let selecionada = null;        // casa "linha,col" (batalha) ou índice do exército (posicionamento)
 let comprando = null;          // compra de peça aguardando a escolha da peça a substituir
@@ -136,7 +137,7 @@ function guardar(chave, valor) {
 }
 
 async function chamar(acao, dados) {
-  const pedido = { acao: acao, dados: dados || {}, run: lerSalvo(CHAVE_RUN), colecao: lerSalvo(CHAVE_COLECAO) };
+  const pedido = { acao: acao, dados: dados || {}, run: lerSalvo(CHAVE_RUN), colecao: lerSalvo(CHAVE_COLECAO), duelo: lerSalvo(CHAVE_DUELO) };
   let resp;
   try {
     resp = await fetch('/api/jogo', { method: 'POST', body: JSON.stringify(pedido) });
@@ -145,12 +146,15 @@ async function chamar(acao, dados) {
   if (!resp.ok) { avisar(json.erro); return false; }
   guardar(CHAVE_RUN, json._run);
   guardar(CHAVE_COLECAO, json.colecao);
+  guardar(CHAVE_DUELO, json._duelo);
   delete json._run;
+  delete json._duelo;
   if (json.tela !== telaAnterior) lateralAberta = false;  //mudou de tela: fecha o painel de cartas
   telaAnterior = json.tela;
   const antes = E;
   E = json;
   efeitosDaAcao(acao, antes, json);
+  efeitosDoDuelo(acao, antes, json);  //sons do modo duelo (duelo.js)
   const fim = resultadoDaBatalha(antes, json);
   if (fim && json.batalha) { transicaoFim(fim === 'win', json); return true; }
   desenhar();
@@ -306,6 +310,7 @@ function comLateral(titulo, info, principal) {
 //---------- telas
 function desenhar() {
   document.documentElement.style.setProperty('--z', escala());
+  if (E.tela === 'duelo') return telaDuelo(document.getElementById('tela'));  //modo duelo (duelo.js)
   if (modoTeste && (E.tela === 'menu' || E.tela === 'loja' || E.tela === 'derrota')) {  //telas do modo de teste (teste.js)
     document.body.className = '';
     document.getElementById('topo').innerHTML = '';
@@ -335,7 +340,8 @@ function telaMenu(tela) {
   const meio = `<div class="barra-botoes">
       <button class="bt azul grande-bt" onclick="chamar('novo')">JOGAR</button>
       <button class="bt laranja grande-bt" onclick="verComoJogar=true;desenhar()">COMO JOGAR</button>
-      <button class="bt verde grande-bt" onclick="verColecao=true;desenhar()">COLEÇÃO</button></div>`;
+      <button class="bt verde grande-bt" onclick="verColecao=true;desenhar()">COLEÇÃO</button>
+      <button class="bt vermelho grande-bt" onclick="chamar('duelo_novo')">DUELO</button></div>`;
   tela.innerHTML = `<div class="menu-conteudo">${titulo}${meio}</div>`;
 }
 
@@ -613,7 +619,7 @@ async function iniciar() {
 window.addEventListener('resize', () => {
   if (window.innerWidth === larguraAnterior) return;  //só a barra do navegador mudou de altura
   larguraAnterior = window.innerWidth;
-  if (E && E.batalha) desenhar();
+  if (E && (E.batalha || E.duelo)) desenhar();
 });
 //botão de som (liga e desliga)
 const botaoSom = document.createElement('button');

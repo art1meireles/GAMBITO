@@ -230,7 +230,9 @@ def iniciar_batalha():
     efeitos.no_inicio_da_batalha(b)  # habilidades das peças (escudos iniciais, mutantes...)
     cartas.aplicar_no_inicio(b)
     b['fase'] = 'jogando'
-    b['log'].append('A batalha começou!')
+    b['vez'] = 'inimigo'  #o inimigo já estava montado, então joga primeiro (mesma regra do duelo)
+    b['abertura'] = True  #a primeira jogada do inimigo não fecha rodada
+    b['log'].append('A batalha começou! O inimigo joga primeiro.')
     estado.run['tela'] = 'batalha'
 
 
@@ -271,10 +273,11 @@ def vez_do_inimigo():
         return fim_de_batalha(True)
     if xadrez.contar(b, 'j') == 0:
         return fim_de_batalha(False, 'Todo o seu exército foi capturado.')
-    efeitos.ao_fim_da_rodada(b)
-    limite = cartas.limite_de_rodadas()
-    if limite and b['turnos'] >= limite:
-        return fim_de_batalha(False, f'Acabou o tempo ({limite} rodadas).')
+    if not b.pop('abertura', False):  #na jogada de abertura a rodada só fecha depois da resposta do jogador
+        efeitos.ao_fim_da_rodada(b)
+        limite = cartas.limite_de_rodadas()
+        if limite and b['turnos'] >= limite:
+            return fim_de_batalha(False, f'Acabou o tempo ({limite} rodadas).')
     tem_jogada = any(xadrez.movimentos(b['pecas'], q, b['n']) for q in b['pecas'] if q['lado'] == 'j')
     if not tem_jogada:
         return fim_de_batalha(False, 'Você ficou sem movimentos.')
