@@ -24,6 +24,63 @@ function ehCelular() { return window.matchMedia('(max-width: 820px), (pointer: c
 //no celular em pé, aumenta tudo conforme a largura da tela (1 = celular comum; maior = tela larga ou "site para computador")
 function escala() { return ehCelular() ? Math.min(2.4, Math.max(1, window.innerWidth / 400)) : 1; }
 
+//---------- sons (arquivos em /sons/) e animações de fim de batalha
+const SONS = {};
+['piece1', 'piece2', 'promote', 'win', 'lose'].forEach(nome => {
+  SONS[nome] = new Audio('/sons/' + nome + '.wav');
+  SONS[nome].preload = 'auto';
+});
+let mudo = lerSalvo('gambito_mudo') === true;
+
+function tocar(nome) {
+  if (mudo || !SONS[nome]) return;
+  const som = SONS[nome].cloneNode();  //cópia: permite dois sons ao mesmo tempo sem cortar o anterior
+  som.play().catch(() => {});  //sem arquivo ou sem permissão do navegador: segue sem som
+}
+
+function alternarMudo() {
+  mudo = !mudo;
+  guardar('gambito_mudo', mudo);
+  atualizarBotaoSom();
+}
+
+function atualizarBotaoSom() {
+  const b = document.getElementById('som');
+  if (b) { b.textContent = mudo ? '🔇' : '🔊'; b.title = mudo ? 'Ligar o som' : 'Desligar o som'; }
+}
+
+//animação rápida de vitória (confete) ou derrota (tela escurece e treme)
+function animarFim(venceu) {
+  const fx = document.createElement('div');
+  fx.className = 'fx-fim ' + (venceu ? 'fx-vitoria' : 'fx-derrota');
+  let html = `<div class="fx-texto">${venceu ? 'VITÓRIA!' : 'DERROTA'}</div>`;
+  if (venceu) {
+    const cores = ['#f0b030', '#1d7cf2', '#e8403a', '#2f9d6a', '#f4efe2'];
+    for (let i = 0; i < 40; i++) {
+      html += `<i style="left:${Math.random() * 100}%; background:${cores[i % cores.length]}; animation-delay:${(Math.random() * 0.6).toFixed(2)}s; animation-duration:${(1.4 + Math.random() * 1).toFixed(2)}s"></i>`;
+    }
+  }
+  fx.innerHTML = html;
+  document.body.appendChild(fx);
+  setTimeout(() => fx.remove(), 2600);
+}
+
+//compara o estado antes e depois da ação para decidir qual som tocar
+function efeitosDaAcao(acao, antes, depois) {
+  if (antes && antes.tela === 'batalha' && depois.tela === 'loja') { tocar('win'); animarFim(true); return; }
+  if (antes && antes.tela === 'batalha' && depois.tela === 'derrota') { tocar('lose'); animarFim(false); return; }
+  if (antes && antes.batalha && depois.batalha) {
+    const tipos = {};
+    antes.batalha.pecas.forEach(p => tipos[p.uid] = p.tipo);
+    if (depois.batalha.pecas.some(p => tipos[p.uid] === 'P' && p.tipo === 'Q')) tocar('promote');
+  }
+  if (acao === 'mover') tocar('piece1');
+  if (acao === 'vez_inimigo' && depois.batalha) {
+    const log = depois.batalha.log;
+    if (log[log.length - 1] !== 'O inimigo perdeu o turno.') tocar('piece2');
+  }
+}
+
 function simbolo(tipo) { return SIMBOLO[tipo] + '︎'; } // ︎ evita virar emoji
 
 function iconesDosEfeitos(efeitos, escudo) {
@@ -65,7 +122,9 @@ async function chamar(acao, dados) {
   delete json._run;
   if (json.tela !== telaAnterior) lateralAberta = false;  //mudou de tela: fecha o painel de cartas
   telaAnterior = json.tela;
+  const antes = E;
   E = json;
+  efeitosDaAcao(acao, antes, json);
   desenhar();
   esperarInimigo();
   return true;
@@ -497,4 +556,10 @@ window.addEventListener('resize', () => {
   larguraAnterior = window.innerWidth;
   if (E && E.batalha) desenhar();
 });
+//botão de som (liga e desliga)
+const botaoSom = document.createElement('button');
+botaoSom.id = 'som';
+botaoSom.onclick = alternarMudo;
+document.body.appendChild(botaoSom);
+atualizarBotaoSom();
 iniciar();
