@@ -28,7 +28,9 @@ def descricao_dos_efeitos(lista_de_efeitos):
     partes = []
     for e in lista_de_efeitos:
         modelo = EFEITOS[e['tipo']]['desc']
-        partes.append(modelo.replace('{valor}', str(e.get('valor', 1))))
+        for campo, valor in {'valor': 1, **e}.items():  #cada {campo} do texto vira o número daquele campo do efeito
+            modelo = modelo.replace('{' + campo + '}', str(valor))
+        partes.append(modelo)
     return ' '.join(partes) if partes else 'Peça comum, sem habilidade.'
 
 

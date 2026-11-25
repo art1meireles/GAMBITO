@@ -39,7 +39,9 @@ def movimentos(pecas, p, n):
     #Lista de casas (linha, col) para onde a peça p pode ir
     res = []
     l, c = p['linha'], p['col']
-    tipo = p['tipo']
+    tipo = p.get('copia') or p['tipo']  # a Parasita anda como a última peça que capturou
+    efs = {e['tipo'] for e in p['efeitos']}
+    nivel = p.get('nivel', 0) if 'berserker' in efs else 0  # cada captura do Berserker sobe 1 nível
 
     def pode_ir(nl, nc):
         if not (0 <= nl < n and 0 <= nc < n):
@@ -47,24 +49,50 @@ def movimentos(pecas, p, n):
         outra = peca_em(pecas, nl, nc)
         return outra is None or outra['lado'] != p['lado']
 
+    def vazia(nl, nc):
+        return 0 <= nl < n and 0 <= nc < n and peca_em(pecas, nl, nc) is None
+
+    troca_diagonal = 'troca_diagonal' in efs and p.get('espera', 0) == 0
+    if 'troca_qualquer' in efs and not p.get('usou_troca'):  # troca de lugar com qualquer aliado
+        res += [(q['linha'], q['col']) for q in pecas if q is not p and q['lado'] == p['lado']]
+
     if tipo == 'P':
         frente = -1 if p['lado'] == 'j' else 1
-        if 0 <= l + frente < n:
-            if peca_em(pecas, l + frente, c) is None:
-                res.append((l + frente, c))
-            for dc in (-1, 1):  # captura na diagonal
-                alvo = peca_em(pecas, l + frente, c + dc)
-                if alvo and alvo['lado'] != p['lado']:
-                    res.append((l + frente, c + dc))
+        for passo in range(1, 2 + nivel):  # o Berserker avança mais casas
+            if not vazia(l + frente * passo, c):
+                break
+            res.append((l + frente * passo, c))
+        for dc in (-1, 1):  # captura na diagonal
+            alvo = peca_em(pecas, l + frente, c + dc)
+            if alvo and alvo['lado'] != p['lado']:
+                res.append((l + frente, c + dc))
+        na_frente = peca_em(pecas, l + frente, c)
+        if na_frente and vazia(l + 2 * frente, c):  # pular a casa da frente
+            if ('peao_saltador' in efs or ('peao_independente' in efs and na_frente['lado'] == p['lado'])
+                    or ('pacifista' in efs and na_frente['lado'] != p['lado'])):
+                res.append((l + 2 * frente, c))
     elif tipo == 'N':
-        for dl, dc in [(1, 2), (2, 1), (-1, 2), (-2, 1), (1, -2), (2, -1), (-1, -2), (-2, -1)]:
-            if pode_ir(l + dl, c + dc):
-                res.append((l + dl, c + dc))
+        saltos = [(1, 2), (2, 1)]
+        for k in range(1, nivel + 1):  # Berserker: saltos 3+2, 4+3, 5+4
+            saltos += [(k + 2, k + 1), (k + 1, k + 2)]
+        for a, b in saltos:
+            for dl, dc in {(a, b), (a, -b), (-a, b), (-a, -b)}:
+                if pode_ir(l + dl, c + dc):
+                    res.append((l + dl, c + dc))
     elif tipo == 'K':
         for dl in (-1, 0, 1):
             for dc in (-1, 0, 1):
-                if (dl or dc) and pode_ir(l + dl, c + dc):
-                    res.append((l + dl, c + dc))
+                if not (dl or dc):
+                    continue
+                for passo in range(1, 2 + nivel):  # o Berserker anda mais casas em linha reta
+                    nl, nc = l + dl * passo, c + dc * passo
+                    if not pode_ir(nl, nc):
+                        break
+                    res.append((nl, nc))
+                    if peca_em(pecas, nl, nc):
+                        break
+                if 'rei_ausente' in efs and peca_em(pecas, l + dl, c + dc) and pode_ir(l + 2 * dl, c + 2 * dc):
+                    res.append((l + 2 * dl, c + 2 * dc))  # pula por cima de uma peça
     else:  # B, R, Q andam em linha reta até bater em algo
         direcoes = []
         if tipo in 'BQ':
@@ -73,12 +101,28 @@ def movimentos(pecas, p, n):
             direcoes += [(1, 0), (-1, 0), (0, 1), (0, -1)]
         for dl, dc in direcoes:
             nl, nc = l + dl, c + dc
-            while pode_ir(nl, nc):
-                res.append((nl, nc))
-                if peca_em(pecas, nl, nc):  # capturou: para aqui
+            cruzou = False
+            while True:
+                if pode_ir(nl, nc):
+                    res.append((nl, nc))
+                    if peca_em(pecas, nl, nc):  # capturou: para aqui
+                        break
+                elif 'bispo_independente' in efs and not cruzou and 0 <= nl < n and 0 <= nc < n:
+                    cruzou = True  # atravessa um aliado por direção
+                else:
                     break
                 nl += dl
                 nc += dc
+            if troca_diagonal and dl and dc:  # a primeira peça da diagonal, se for aliada, pode trocar de lugar
+                outra = peca_em(pecas, nl, nc) if 0 <= nl < n and 0 <= nc < n else None
+                if outra and outra['lado'] == p['lado']:
+                    res.append((nl, nc))
+        if 'errante' in efs and not p.get('usou_errante'):  # um passo reto, uma vez por batalha
+            for dl, dc in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                if vazia(l + dl, c + dc):
+                    res.append((l + dl, c + dc))
+    if 'pacifista' in efs:  # nunca captura
+        res = [m for m in res if peca_em(pecas, m[0], m[1]) is None]
     return res
 
 
@@ -88,14 +132,34 @@ def mover(batalha, p, linha, col):
     quem = 'Você' if p['lado'] == 'j' else 'Inimigo'
     texto = f"{quem}: {nome_da_peca(p)} {casa(p['linha'], p['col'], n)}→{casa(linha, col, n)}"
     alvo = peca_em(pecas, linha, col)
+    if alvo and alvo['lado'] == p['lado']:  # troca de lugar com um aliado
+        alvo['linha'], alvo['col'] = p['linha'], p['col']
+        p['linha'], p['col'] = linha, col
+        if efeitos.tem(p, 'troca_diagonal'):
+            p['espera'] = 3  # só volta a trocar depois de 3 turnos
+        if efeitos.tem(p, 'troca_qualquer'):
+            p['usou_troca'] = True
+        batalha['bonus'] += efeitos.ao_mover(batalha, p)
+        batalha['log'].append(texto + f' - troca de lugar com {nome_da_peca(alvo)}')
+        return
+    copia = p.pop('copia', None)  # a cópia da Parasita vale só para este movimento
     if alvo:
-        if efeitos.ao_receber_golpe(alvo):  # escudo: o atacante fica onde estava
-            batalha['log'].append(texto + ' - o escudo absorveu o golpe!')
+        motivo = efeitos.ao_receber_golpe(alvo, p)
+        if motivo:  # escudo, sorte etc.: o atacante fica onde estava
+            if copia:
+                p['copia'] = copia
+            batalha['log'].append(texto + ' - ' + motivo)
             return
         pecas.remove(alvo)
         texto += ' captura ' + nome_da_peca(alvo)
         cartas.ao_perder_peca(batalha, alvo)  # só age se a peça capturada era do jogador
-        if efeitos.ao_ser_capturado(alvo):  # explodiu: leva o atacante junto
+        explodiu, destruidas = efeitos.ao_ser_capturado(alvo, p, batalha)
+        for d in destruidas:  # explosões da peça capturada
+            if d is not p:
+                pecas.remove(d)
+                cartas.ao_perder_peca(batalha, d)
+                texto += f' - a explosão destrói {nome_da_peca(d)}'
+        if explodiu or p in destruidas:  # explodiu: leva o atacante junto
             pecas.remove(p)
             cartas.ao_perder_peca(batalha, p)
             if alvo['lado'] == 'j':
@@ -106,17 +170,23 @@ def mover(batalha, p, linha, col):
             pecas.remove(p)
             batalha['log'].append(texto + ' - mas o contra-ataque destrói o atacante!')
             return
-        moedas, destruidas = efeitos.ao_capturar(p, linha, col, pecas)
+        moedas, destruidas = efeitos.ao_capturar(p, alvo, linha, col, batalha)
         moedas += cartas.moedas_ao_capturar(batalha, p, alvo)
         batalha['bonus'] += moedas
         if moedas:
             texto += f' (+{moedas} moedas)'
         for d in destruidas:
+            pecas.remove(d)
+            cartas.ao_perder_peca(batalha, d)
             texto += f' - destrói {nome_da_peca(d)}'
+    if efeitos.tem(p, 'errante') and (linha == p['linha'] or col == p['col']):
+        p['usou_errante'] = True  # gastou o passo reto
     p['linha'], p['col'] = linha, col
+    batalha['bonus'] += efeitos.ao_mover(batalha, p)
     ultima_linha = 0 if p['lado'] == 'j' else n - 1
     if p['tipo'] == 'P' and linha == ultima_linha:
         p['tipo'] = 'Q'
+        p['efeitos'] = [e for e in p['efeitos'] if e['tipo'] != 'pacifista']  # a promoção apaga o pacifismo
         texto += ' e vira Rainha!'
         if p['lado'] == 'j':
             batalha['bonus'] += cartas.moedas_promocao()
@@ -182,6 +252,8 @@ def _casa_ameacada(pecas, n, linha, col, lado):
 def _simular(pecas, p, l, c):
     #Devolve a lista de peças depois que p vai para (l, c). Escudo absorve a captura (o atacante não se move)
     alvo = peca_em(pecas, l, c)
+    if alvo and alvo['lado'] == p['lado']:  # troca de lugar
+        return [dict(q, linha=p['linha'], col=p['col']) if q is alvo else dict(q, linha=l, col=c) if q is p else q for q in pecas]
     if alvo and alvo['escudo'] > 0:
         return [dict(q, escudo=q['escudo'] - 1) if q is alvo else q for q in pecas]
     return [q for q in pecas if q is not p and q is not alvo] + [dict(p, linha=l, col=c)]

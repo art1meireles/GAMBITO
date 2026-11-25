@@ -40,6 +40,9 @@ def estado_para_o_navegador():
         lj = r['loja']
         s['precos'] = {'ofertas': [cartas.preco_da_peca(k) for k in lj['ofertas']],
                        'misteriosa': cartas.preco_da_misteriosa(), 'troca': cartas.custo_da_troca(lj)}
+        s['venda'] = {'pecas': [loja.valor_da_peca(k) for k in r['exercito']],
+                      'cartas': [loja.valor_da_carta(k) for k in r['cartas']],
+                      'consumiveis': [loja.valor_da_carta(k) for k in r['consumiveis']]}
     b = r['batalha']
     if b and r['tela'] in ('posicionamento', 'batalha', 'loja', 'derrota'):  # loja e derrota: o tabuleiro final aparece na transição
         pecas = b['pecas']
@@ -59,6 +62,9 @@ def estado_para_o_navegador():
         s['batalha'] = {'n': b['n'], 'pecas': pecas, 'posicoes': b['posicoes'], 'rodadas': b['rodadas'],
                         'log': b['log'][-12:], 'jogadas': jogadas, 'zona_inicio': b['zona_inicio'],
                         'ameacas': ameacas, 'limite': limite, 'fase': b['fase'], 'vez': b['vez']}
+        if b.get('modo_teste'):
+            s['teste'] = {'bonus': b['bonus'], 'serie': b.get('serie', 0), 'turnos': b['turnos'],
+                          'parado': bool(b.get('inimigo_parado'))}
     return s
 
 
@@ -84,6 +90,10 @@ def executar(acao, d):
     elif acao == 'comprar':
         slot = d['slot'] if d['slot'] == 'misteriosa' else int(d['slot'])
         loja.comprar(slot, int(d['substituir']))
+    elif acao == 'vender_peca':
+        loja.vender_peca(int(d['indice']))
+    elif acao == 'vender_carta':
+        loja.vender_carta(bool(d.get('consumivel')), int(d['indice']))
     elif acao == 'comprar_pacote':
         loja.comprar_pacote(int(d['slot']))
     elif acao == 'escolher_carta':
@@ -94,6 +104,12 @@ def executar(acao, d):
     elif acao == 'usar_carta':
         alvo = d.get('alvo')
         consumiveis.usar(int(d['indice']), None if alvo is None else int(alvo))
+    elif acao == 'teste_montar':
+        run.montar_teste(d)
+    elif acao == 'teste_parado':
+        run.teste_parado(bool(d.get('valor')))
+    elif acao == 'teste_avancar':
+        run.teste_avancar(int(d.get('n', 1)))
     elif acao == 'proxima':
         if estado.run['pacote'] is not None:
             raise ValueError('Escolha uma carta do pacote aberto primeiro.')
@@ -109,6 +125,7 @@ def processar(corpo):
         raise ValueError('partida salva inválida')
     with TRAVA:
         estado.run = run_recebida
+        run.sanear_partida()
         colecao.definir(corpo.get('colecao'))
         executar(str(corpo.get('acao') or 'estado'), corpo.get('dados') or {})
         s = estado_para_o_navegador()

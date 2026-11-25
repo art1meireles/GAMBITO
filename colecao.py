@@ -1,5 +1,7 @@
 # Peças e cartas já descobertas, recorde e número de runs. Fica guardada no navegador (localStorage); o servidor só a recebe, altera e devolve
 
+import dados
+
 PADRAO = {'pecas': {}, 'cartas': {}, 'runs': 0, 'vitorias': 0, 'melhor': 0}
 
 dados_colecao = dict(PADRAO)
@@ -13,6 +15,7 @@ def definir(recebida):
             valor = recebida.get(chave)
             if isinstance(valor, type(padrao)) and not isinstance(valor, bool):
                 nova[chave] = valor
+    nova['pecas'] = {k: v for k, v in nova['pecas'].items() if k in dados.CATALOGO}  # tira peças que não existem mais
     dados_colecao.clear()
     dados_colecao.update(nova)
 

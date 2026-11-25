@@ -4,6 +4,7 @@ import random
 import cartas
 import colecao
 import dados
+import efeitos
 import estado
 import loja
 import pacotes
@@ -24,8 +25,80 @@ def novo_jogo():
     pacotes.abrir('pacote_inicial')  # toda run começa com um pacote inicial
 
 
+def sanear_partida():
+    #Partida salva com peça que deixou de existir (ex.: Incendiárias): troca pela peça comum do mesmo tipo
+    r = estado.run
+    if not isinstance(r, dict):
+        return
+
+    def valida(id_):
+        return id_ if id_ in dados.CATALOGO else str(id_).split(':')[0] + ':comum'
+
+    r['exercito'] = [valida(i) for i in r['exercito']]
+    if r.get('loja'):
+        r['loja']['ofertas'] = [valida(i) for i in r['loja']['ofertas']]
+        r['loja']['misteriosa'] = valida(r['loja']['misteriosa'])
+
+
+def montar_teste(d):
+    #Modo de teste: monta uma batalha já em andamento com as peças e as posições escolhidas na tela de teste
+    n = int(d['n'])
+    if n not in (5, 6, 7):
+        raise ValueError('O tabuleiro precisa ter 5, 6 ou 7 casas')
+    lista = d['pecas']
+    if not isinstance(lista, list) or len(lista) > n * n:
+        raise ValueError('Peças demais para o tabuleiro')
+    usadas, meus, inimigos = set(), [], []
+    for item in lista:
+        id_, lado, l, c = item['id'], item['lado'], int(item['linha']), int(item['col'])
+        if id_ not in dados.CATALOGO or lado not in ('j', 'i') or not (0 <= l < n and 0 <= c < n) or (l, c) in usadas:
+            raise ValueError('Cenário inválido')
+        usadas.add((l, c))
+        (meus if lado == 'j' else inimigos).append((id_, l, c))
+    if not meus or not inimigos:
+        raise ValueError('Coloque ao menos uma peça sua e uma inimiga')
+    estado.run = {'moedas': 0, 'num': 1, 'exercito': [m[0] for m in meus], 'tela': 'posicionamento',
+                  'batalha': None, 'loja': None, 'relatorio': None,
+                  'cartas': [], 'consumiveis': [], 'extras': {}, 'pacote': None,
+                  'cupom': 0, 'moedas_proxima_loja': 0, 'ultima_compra': 0, 'compras_na_loja': 0}
+    preparar_batalha()
+    b = estado.run['batalha']
+    b['n'] = n
+    b['modo_teste'] = True
+    b['pecas'] = []
+    for id_, l, c in inimigos:
+        modelo = dados.CATALOGO[id_]
+        b['pecas'].append(xadrez.criar_peca('i', modelo['tipo'], [dict(e) for e in modelo['efeitos']], l, c, id_))
+    for i, (id_, l, c) in enumerate(meus):
+        b['pecas'].append(peca_do_jogador(i, l, c))
+    b['meus_iniciais'] = len(meus)
+    efeitos.no_inicio_da_batalha(b)
+    cartas.aplicar_no_inicio(b)
+    b['fase'] = 'jogando'
+    b['log'].append('Cenário de teste montado')
+    estado.run['tela'] = 'batalha'
+
+
+def teste_parado(valor):
+    estado.run['batalha']['inimigo_parado'] = valor  # no modo de teste o inimigo pode ficar sem jogar
+
+
+def teste_avancar(quantidade):
+    #Modo de teste: passa rodadas sem jogar, para ver efeitos que dependem de tempo
+    b = estado.run['batalha']
+    for _ in range(max(0, min(quantidade, 20))):
+        b['turnos'] += 1
+        b['rodadas'] += 1
+        efeitos.ao_fim_da_rodada(b)
+
+
 def abandonar():
     estado.run = None
+
+
+#efeitos de movimento que os inimigos podem receber (só os automáticos, que não pedem decisão)
+EFEITOS_DE_MOVIMENTO_INIMIGO = {'P': ['berserker', 'peao_saltador', 'peao_independente'], 'N': ['berserker', 'parasita'],
+                                'B': ['parasita', 'bispo_independente'], 'R': ['parasita'], 'Q': ['parasita']}
 
 
 def _sortear_inimigos(e, quantidade, casas, chefe):
@@ -49,6 +122,11 @@ def _sortear_inimigos(e, quantidade, casas, chefe):
                 lista.append({'tipo': 'escudo', 'valor': e['escudo_valor']})
             if random.random() < e['chance_explosivo']:
                 lista.append({'tipo': 'explodir_ao_ser_capturado'})
+    for tipo, lista in zip(tipos, efeitos_de_cada):  # alguns inimigos andam de um jeito especial
+        opcoes = EFEITOS_DE_MOVIMENTO_INIMIGO.get(tipo)
+        if opcoes and random.random() < e.get('chance_movimento', 0):
+            nome = random.choice(opcoes)
+            lista.append({'tipo': nome, 'max': 3} if nome == 'berserker' else {'tipo': nome})
     inimigos = []
     for tipo, lista, (l, c) in zip(tipos, efeitos_de_cada, casas):
         inimigos.append(xadrez.criar_peca('i', tipo, lista, l, c))
@@ -134,6 +212,7 @@ def iniciar_batalha():
     for i, (l, c) in b['posicoes'].items():
         b['pecas'].append(peca_do_jogador(int(i), l, c))
     b['meus_iniciais'] = len(b['posicoes'])
+    efeitos.no_inicio_da_batalha(b)  # habilidades das peças (escudos iniciais, mutantes...)
     cartas.aplicar_no_inicio(b)
     b['fase'] = 'jogando'
     b['log'].append('A batalha começou!')
@@ -156,6 +235,8 @@ def jogada_do_jogador(de, para):
     xadrez.mover(b, p, para[0], para[1])
     if xadrez.contar(b, 'i') == 0:
         return fim_de_batalha(True)
+    if xadrez.contar(b, 'j') == 0:  # explosões podem eliminar o seu último pedaço do exército
+        return fim_de_batalha(False, 'Todo o seu exército foi capturado.')
     b['vez'] = 'inimigo'  # o navegador espera 1 segundo e então chama vez_do_inimigo()
 
 
@@ -164,13 +245,18 @@ def vez_do_inimigo():
     if b['fase'] != 'jogando' or b['vez'] != 'inimigo':
         raise ValueError('Não é a vez do inimigo')
     b['vez'] = 'jogador'
-    if b['inimigo_pula'] > 0:
+    if b.get('inimigo_parado'):
+        b['log'].append('Inimigo parado (modo de teste).')
+    elif b['inimigo_pula'] > 0:
         b['inimigo_pula'] -= 1
         b['log'].append('O inimigo perdeu o turno.')
     else:
         xadrez.jogada_inimiga(b)
+    if xadrez.contar(b, 'i') == 0:  # o inimigo perdeu as últimas peças na própria jogada (explosões)
+        return fim_de_batalha(True)
     if xadrez.contar(b, 'j') == 0:
         return fim_de_batalha(False, 'Todo o seu exército foi capturado.')
+    efeitos.ao_fim_da_rodada(b)
     limite = cartas.limite_de_rodadas()
     if limite and b['turnos'] >= limite:
         return fim_de_batalha(False, f'Acabou o tempo ({limite} rodadas).')

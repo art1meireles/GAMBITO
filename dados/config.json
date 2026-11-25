@@ -15,5 +15,6 @@
   "custo_inicial_troca": 1,
   "espacos_cartas": 3,
   "max_consumiveis": 3,
-  "pacotes_na_loja": 3
+  "pacotes_na_loja": 3,
+  "preco_cartas": {"comum": 4, "incomum": 6, "rara": 8, "epica": 11, "lendaria": 15}
 }

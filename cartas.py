@@ -8,6 +8,7 @@ import random
 
 import colecao
 import dados
+import efeitos
 import estado
 
 CFG = dados.CONFIG
@@ -157,6 +158,7 @@ def ao_perder_peca(batalha, peca):
     if peca['lado'] != 'j':
         return
     batalha['perdidas'].append(dict(peca))
+    batalha['serie'] = 0  # quebra a sequência de capturas sem perder peça
     batalha['bonus'] += int(soma('moedas_peca_perdida'))
 
 
@@ -203,7 +205,7 @@ def calcular_recompensa(run, b, d):
         tempo = round(tempo * produto('penalidade_fator'))
 
     vivas = [p for p in b['pecas'] if p['lado'] == 'j']
-    fim_de_batalha = _moedas_dos_efeitos_das_pecas(b['pecas'])
+    fim_de_batalha = efeitos.moedas_no_fim_da_batalha(b)
 
     cartas = int(soma('moedas_fim_vitoria'))
     for bl in blocos('juros'):
@@ -246,16 +248,6 @@ def calcular_recompensa(run, b, d):
     total = max(1, round(soma_total * mult))
     return {'base': base, 'rodadas': b['rodadas'], 'media': media, 'tempo': tempo, 'capturas': b['bonus'],
             'fim_de_batalha': fim_de_batalha, 'cartas': cartas, 'mult': mult, 'total': total}
-
-
-def _moedas_dos_efeitos_das_pecas(pecas):
-    total = 0
-    for p in pecas:
-        if p['lado'] == 'j':
-            for e in p['efeitos']:
-                if e['tipo'] == 'moedas_fim_batalha':
-                    total += e.get('valor', 1)
-    return total
 
 
 # loja

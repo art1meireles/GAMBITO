@@ -6,7 +6,7 @@
       "inimigos": 4, "inteligencia": 0.4, "olhar_a_frente": 0, "media": 12, "recompensa_base": 2,
       "tabuleiros": [5, 6],
       "pesos": {"P": 50, "N": 25, "B": 25, "R": 0, "Q": 0, "K": 0},
-      "chance_escudo": 0, "escudo_valor": 1, "chance_explosivo": 0,
+      "chance_escudo": 0, "escudo_valor": 1, "chance_explosivo": 0, "chance_movimento": 0,
       "chefe": {"quantidade": 5, "obrigatorias": ["N"], "escudos": 1, "explosivas": 0, "pacote": "expresso_hikaru"}
     },
     {
@@ -14,7 +14,7 @@
       "inimigos": 5, "inteligencia": 0.55, "olhar_a_frente": 0, "media": 14, "recompensa_base": 3,
       "tabuleiros": [5, 6, 7],
       "pesos": {"P": 35, "N": 20, "B": 20, "R": 25, "Q": 0, "K": 0},
-      "chance_escudo": 0.10, "escudo_valor": 1, "chance_explosivo": 0,
+      "chance_escudo": 0.10, "escudo_valor": 1, "chance_explosivo": 0, "chance_movimento": 0.05,
       "chefe": {"quantidade": 6, "obrigatorias": ["R"], "escudos": 2, "explosivas": 0, "pacote": "registros_de_philidor"}
     },
     {
@@ -22,7 +22,7 @@
       "inimigos": 6, "inteligencia": 0.7, "olhar_a_frente": 0, "media": 16, "recompensa_base": 4,
       "tabuleiros": [5, 6, 7],
       "pesos": {"P": 30, "N": 15, "B": 15, "R": 30, "Q": 8, "K": 0},
-      "chance_escudo": 0.20, "escudo_valor": 1, "chance_explosivo": 0.05,
+      "chance_escudo": 0.20, "escudo_valor": 1, "chance_explosivo": 0.05, "chance_movimento": 0.1,
       "chefe": {"quantidade": 6, "obrigatorias": ["Q"], "escudos": 2, "explosivas": 2, "pacote": "ataque_sovietico"}
     },
     {
@@ -30,7 +30,7 @@
       "inimigos": 6, "inteligencia": 0.85, "olhar_a_frente": 0, "media": 18, "recompensa_base": 5,
       "tabuleiros": [5, 6, 7],
       "pesos": {"P": 20, "N": 15, "B": 15, "R": 30, "Q": 20, "K": 0},
-      "chance_escudo": 0.30, "escudo_valor": 1, "chance_explosivo": 0.10,
+      "chance_escudo": 0.30, "escudo_valor": 1, "chance_explosivo": 0.10, "chance_movimento": 0.15,
       "chefe": {"quantidade": 6, "obrigatorias": ["Q", "R", "R"], "escudos": 4, "explosivas": 2, "pacote": "bencao_de_caissa"}
     },
     {
@@ -38,7 +38,7 @@
       "inimigos": 6, "inteligencia": 1.0, "olhar_a_frente": 2, "media": 20, "recompensa_base": 6,
       "tabuleiros": [6, 7],
       "pesos": {"P": 10, "N": 15, "B": 15, "R": 30, "Q": 30, "K": 0},
-      "chance_escudo": 0.50, "escudo_valor": 2, "chance_explosivo": 0.20,
+      "chance_escudo": 0.50, "escudo_valor": 2, "chance_explosivo": 0.20, "chance_movimento": 0.2,
       "crescimento": {"a_cada": 10, "chance_escudo_mais": 0.05, "chance_explosivo_mais": 0.03,
                       "escudo_valor_a_cada_niveis": 3, "escudo_valor_max": 4, "media_mais": 1},
       "chefe": {"quantidade": 6, "obrigatorias": ["Q", "Q", "R"], "escudos": 6, "explosivas": 3, "pacote": "segredo_de_carlsen"}

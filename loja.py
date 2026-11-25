@@ -59,7 +59,10 @@ def comprar(slot, substituir):
     _checar_loja()
     run = estado.run
     loja = run['loja']
-    if not (0 <= substituir < len(run['exercito'])):
+    tem_vaga = len(run['exercito']) < CFG['tamanho_exercito']  #depois de vender uma peça sobra uma vaga
+    if substituir == -1 and tem_vaga:
+        pass
+    elif not (0 <= substituir < len(run['exercito'])):
         raise ValueError('Escolha qual peça substituir')
     if slot == 'misteriosa':
         if loja['misteriosa_vendida']:
@@ -73,7 +76,10 @@ def comprar(slot, substituir):
     if run['moedas'] < preco:
         raise ValueError('Moedas insuficientes')
     run['moedas'] -= preco
-    run['exercito'][substituir] = id_da_peca  # a nova peça toma o lugar de uma antiga
+    if substituir == -1:
+        run['exercito'].append(id_da_peca)  # ocupa a vaga livre
+    else:
+        run['exercito'][substituir] = id_da_peca  # a nova peça toma o lugar de uma antiga
     if slot == 'misteriosa':
         loja['misteriosa_vendida'] = True
     else:
@@ -103,3 +109,41 @@ def comprar_pacote(slot):
     run['moedas'] -= preco
     loja['pacotes_vendidos'][slot] = True
     pacotes.abrir(id_do_pacote)
+
+
+#venda: devolve metade do preço original, arredondando para baixo, com mínimo de 1
+def valor_de_venda(preco_original):
+    return max(1, int(preco_original) // 2)
+
+
+def valor_da_peca(id_da_peca):
+    return valor_de_venda(dados.CATALOGO[id_da_peca]['preco'])
+
+
+def valor_da_carta(id_da_carta):
+    return valor_de_venda(CFG['preco_cartas'][dados.CARTAS[id_da_carta]['raridade']])
+
+
+def vender_peca(indice):
+    _checar_loja()
+    run = estado.run
+    if not (0 <= indice < len(run['exercito'])):
+        raise ValueError('Peça inválida')
+    if len(run['exercito']) <= 1:
+        raise ValueError('Você precisa ficar com pelo menos uma peça.')
+    run['moedas'] += valor_da_peca(run['exercito'].pop(indice))
+    novos = {}  # os efeitos de cartas acompanham as peças que ficaram
+    for chave, lista in run['extras'].items():
+        i = int(chave)
+        if i != indice:
+            novos[str(i - 1 if i > indice else i)] = lista
+    run['extras'] = novos
+
+
+def vender_carta(consumivel, indice):
+    _checar_loja()
+    run = estado.run
+    lista = run['consumiveis'] if consumivel else run['cartas']
+    if not (0 <= indice < len(lista)):
+        raise ValueError('Carta inválida')
+    run['moedas'] += valor_da_carta(lista.pop(indice))

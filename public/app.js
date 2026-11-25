@@ -6,6 +6,10 @@ const MOMENTOS = {
   qualquer: ['loja', 'posicionamento', 'batalha'], loja: ['loja'], batalha: ['batalha'],
   posicionamento: ['posicionamento'], combate: ['posicionamento', 'batalha'], preparo: ['loja', 'posicionamento'],
 };
+//modo de teste (endereço com ?teste): usa partida e coleção separadas, que não mexem no jogo de verdade
+const modoTeste = new URLSearchParams(location.search).has('teste');
+const CHAVE_RUN = modoTeste ? 'gambito_teste_run' : 'gambito_run';
+const CHAVE_COLECAO = modoTeste ? 'gambito_teste_colecao' : 'gambito_colecao';
 let E = null;                  // estado vindo do servidor
 let selecionada = null;        // casa "linha,col" (batalha) ou índice do exército (posicionamento)
 let comprando = null;          // compra de peça aguardando a escolha da peça a substituir
@@ -99,7 +103,7 @@ function efeitosDaAcao(acao, antes, depois) {
   if (acao === 'mover') tocar('piece1');
   if (acao === 'vez_inimigo' && depois.batalha) {
     const log = depois.batalha.log;
-    if (log[log.length - 1] !== 'O inimigo perdeu o turno.') tocar('piece2');
+    if (!['O inimigo perdeu o turno.', 'Inimigo parado (modo de teste).'].includes(log[log.length - 1])) tocar('piece2');
   }
 }
 
@@ -132,15 +136,15 @@ function guardar(chave, valor) {
 }
 
 async function chamar(acao, dados) {
-  const pedido = { acao: acao, dados: dados || {}, run: lerSalvo('gambito_run'), colecao: lerSalvo('gambito_colecao') };
+  const pedido = { acao: acao, dados: dados || {}, run: lerSalvo(CHAVE_RUN), colecao: lerSalvo(CHAVE_COLECAO) };
   let resp;
   try {
     resp = await fetch('/api/jogo', { method: 'POST', body: JSON.stringify(pedido) });
   } catch (e) { avisar('Sem conexão com o servidor.'); return false; }
   const json = await resp.json();
   if (!resp.ok) { avisar(json.erro); return false; }
-  guardar('gambito_run', json._run);
-  guardar('gambito_colecao', json.colecao);
+  guardar(CHAVE_RUN, json._run);
+  guardar(CHAVE_COLECAO, json.colecao);
   delete json._run;
   if (json.tela !== telaAnterior) lateralAberta = false;  //mudou de tela: fecha o painel de cartas
   telaAnterior = json.tela;
@@ -181,7 +185,7 @@ function desenharTabuleiro(b) {
       let cls = 'casa ' + ((l + c) % 2 ? 'escura' : 'clara');
       if (b.fase === 'posicionando' && l >= b.zona_inicio) cls += ' minha-zona';
       if (chave === selecionada) cls += ' selecionada';
-      if (destinos.includes(chave)) cls += ' destino' + (p ? ' captura' : '');
+      if (destinos.includes(chave)) cls += ' destino' + (p ? (p.lado === 'j' ? ' troca' : ' captura') : '');  //casa de aliado = troca de lugar
       if (ameacas.has(chave)) cls += ' ameaca';
       let clicavel = false;
       if (E.tela === 'posicionamento') clicavel = l >= b.zona_inicio;
@@ -192,7 +196,7 @@ function desenharTabuleiro(b) {
       if (p) {
         const selo = iconesDosEfeitos(p.efeitos, p.escudo);
         conteudo = `<div class="peca" data-uid="${p.uid}" data-l="${l}" data-c="${c}" data-lado="${p.lado}">
-          <span class="peca-${p.lado}" style="font-size:${tam * 0.75}px; line-height:1">${simbolo(p.tipo)}</span>`
+          <span class="peca-${p.lado}" style="font-size:${tam * 0.75}px; line-height:1">${simbolo(p.copia || p.tipo)}</span>`
                  + (selo ? `<span class="selo">${selo}</span>` : '') + '</div>';
       }
       html += `<div class="${cls}" style="height:${tam}px" ${clicavel ? `onclick="clicouCasa(${l},${c})"` : ''}>${conteudo}</div>`;
@@ -224,17 +228,41 @@ function slotCarta(id, botao) {
 function painelCartas() {
   const vazios = Math.max(0, E.espacos - E.cartas.length);
   let html = `<div class="painel"><div class="rotulo">Cartas ${E.cartas.length}/${E.espacos}</div>`;
-  html += E.cartas.map(id => slotCarta(id)).join('');
+  html += E.cartas.map((id, i) => slotCarta(id, botaoVenda(false, i))).join('');
   html += Array(vazios).fill('<div class="slot vazio">vazio</div>').join('');
   html += `<div class="rotulo">Consumíveis ${E.consumiveis.length}/${E.config.max_consumiveis}</div>`;
   html += E.consumiveis.map((id, i) => {
     const c = E.cartas_catalogo[id];
     const ok = MOMENTOS[c.quando].includes(E.tela) && !(c.categoria === 'risco' && !(E.batalha && E.batalha.fase === 'posicionando'));
     const rotulo = usando === i ? 'Escolha a peça...' : 'Usar';
-    return slotCarta(id, `<button class="bt laranja mini-bt" ${ok ? '' : 'disabled'} onclick="usarCarta(${i})">${rotulo}</button>`);
+    return slotCarta(id, `<button class="bt laranja mini-bt" ${ok ? '' : 'disabled'} onclick="usarCarta(${i})">${rotulo}</button>` + botaoVenda(true, i));
   }).join('') || '<div class="slot vazio">nenhum</div>';
   if (usando !== null) html += '<div class="aviso-uso">Clique na peça que receberá o efeito. <button class="bt cinza mini-bt" onclick="usando=null;desenhar()">Cancelar</button></div>';
   return html + '</div>';
+}
+
+//venda (só na loja): devolve metade do preço original
+function botaoVenda(consumivel, i) {
+  if (E.tela !== 'loja' || !E.venda) return '';
+  const valor = (consumivel ? E.venda.consumiveis : E.venda.cartas)[i];
+  return `<button class="bt cinza mini-bt" ${E.pacote ? 'disabled' : ''} onclick="vender('${consumivel ? 'consumivel' : 'carta'}',${i})">Vender $${valor}</button>`;
+}
+
+async function vender(tipo, i) {
+  usando = null;
+  if (tipo === 'peca') await chamar('vender_peca', { indice: i });
+  else await chamar('vender_carta', { consumivel: tipo === 'consumivel', indice: i });
+}
+
+//com vaga livre no exército a peça entra direto; sem vaga, você escolhe qual substituir
+async function iniciarCompra(slot) {
+  if (E.exercito.length < E.config.tamanho_exercito) {
+    const ok = await chamar('comprar', { slot: slot, substituir: -1 });
+    if (ok) { ultimaCompra = E.exercito[E.exercito.length - 1]; desenhar(); }
+    return;
+  }
+  comprando = slot;
+  desenhar();
 }
 
 async function usarCarta(i) {
@@ -278,6 +306,11 @@ function comLateral(titulo, info, principal) {
 //---------- telas
 function desenhar() {
   document.documentElement.style.setProperty('--z', escala());
+  if (modoTeste && (E.tela === 'menu' || E.tela === 'loja' || E.tela === 'derrota')) {  //telas do modo de teste (teste.js)
+    document.body.className = '';
+    document.getElementById('topo').innerHTML = '';
+    return E.tela === 'menu' ? telaEditorTeste(document.getElementById('tela')) : telaResultadoTeste(document.getElementById('tela'));
+  }
   const topo = document.getElementById('topo');
   const tela = document.getElementById('tela');
   const noMenu = E.tela === 'menu' && !verColecao && !verComoJogar;
@@ -410,7 +443,7 @@ function telaBatalha(tela) {
     <div class="log">${b.log.map(l => '<div>' + l + '</div>').join('')}</div>`;
   const principal = `<div>${desenharTabuleiro(b)}</div>
     <p class="dica">Verde = mover · anel vermelho = capturar${b.ameacas.length ? ' · casas avermelhadas = alcance inimigo' : ''}</p>`;
-  tela.innerHTML = comLateral(E.estagio.chefe ? `CHEFE · Batalha ${E.num}` : `Batalha ${E.num}`, info, principal);
+  tela.innerHTML = comLateral(E.estagio.chefe ? `CHEFE · Batalha ${E.num}` : `Batalha ${E.num}`, info, principal + (modoTeste ? painelTeste() : ''));
   const box = document.querySelector('.log'); if (box) box.scrollTop = box.scrollHeight;
 }
 
@@ -437,24 +470,26 @@ function telaLoja(tela) {
   if (E.cupom) html += `<div class="dica">Cupom ativo: sua próxima peça custa ${E.cupom} a menos.</div>`;
 
   //área do exército (como a área dos coringas do Balatro)
-  html += `<div class="area-exercito"><div class="rotulo">Seu exército ${E.exercito.length}/${E.exercito.length}
+  const podeVender = E.exercito.length > 1 && comprando === null && !E.pacote;
+  html += `<div class="area-exercito"><div class="rotulo">Seu exército ${E.exercito.length}/${E.config.tamanho_exercito}
     ${comprando !== null ? ' — clique na peça que será SUBSTITUÍDA' : ' — ★ = peça com efeito de carta'}</div>
-    <div class="lista centro">${E.exercito.map((k, i) => cartaExercito(k, i, comprando !== null || usando !== null ? 'escolhida' : '')).join('')}</div></div>`;
+    <div class="lista centro">${E.exercito.map((k, i) => `<div class="item">${cartaExercito(k, i, comprando !== null || usando !== null ? 'escolhida' : '')}
+      <button class="bt cinza mini-bt" ${podeVender ? '' : 'disabled'} onclick="vender('peca',${i})">Vender $${E.venda.pecas[i]}</button></div>`).join('')}</div></div>`;
 
   //peças à venda
   let pecas = loja.ofertas.map((k, i) => {
     const p = E.catalogo[k], vendida = loja.vendidas[i], preco = pr.ofertas[i];
     const original = p.preco !== preco ? ` <s>${p.preco}</s>` : '';
     return `<div class="item ${vendida ? 'vendido' : ''}"><div class="etiqueta">$${preco}${original}</div>
-      <div class="carta" onclick="${vendida || E.moedas < preco ? '' : `comprando='${i}';desenhar()`}">
+      <div class="carta" onclick="${vendida || E.moedas < preco ? '' : `iniciarCompra('${i}')`}">
       <div class="icone">${simbolo(p.tipo)}</div><b>${p.nome}</b><small>${p.desc}</small></div>
-      <button class="bt laranja mini-bt" ${vendida || E.moedas < preco ? 'disabled' : ''} onclick="comprando='${i}';desenhar()">${vendida ? 'Comprada' : 'Comprar'}</button></div>`;
+      <button class="bt laranja mini-bt" ${vendida || E.moedas < preco ? 'disabled' : ''} onclick="iniciarCompra('${i}')">${vendida ? 'Comprada' : 'Comprar'}</button></div>`;
   }).join('');
   const mv = loja.misteriosa_vendida;
   pecas += `<div class="item ${mv ? 'vendido' : ''}"><div class="etiqueta">$${pr.misteriosa}</div>
-    <div class="carta" onclick="${mv || E.moedas < pr.misteriosa ? '' : `comprando='misteriosa';desenhar()`}">
+    <div class="carta" onclick="${mv || E.moedas < pr.misteriosa ? '' : `iniciarCompra('misteriosa')`}">
     <div class="icone">?</div><b>Peça misteriosa</b><small>Uma peça aleatória. Só descobre ao comprar!</small></div>
-    <button class="bt laranja mini-bt" ${mv || E.moedas < pr.misteriosa ? 'disabled' : ''} onclick="comprando='misteriosa';desenhar()">${mv ? 'Comprada' : 'Comprar'}</button></div>`;
+    <button class="bt laranja mini-bt" ${mv || E.moedas < pr.misteriosa ? 'disabled' : ''} onclick="iniciarCompra('misteriosa')">${mv ? 'Comprada' : 'Comprar'}</button></div>`;
 
   //pacotes
   const pacs = loja.pacotes.map((id, i) => {
@@ -570,7 +605,7 @@ async function abandonar() {
 
 async function iniciar() {
   if (!(await chamar('estado'))) {  // partida salva com problema: começa do menu
-    guardar('gambito_run', null);
+    guardar(CHAVE_RUN, null);
     await chamar('estado');
   }
 }

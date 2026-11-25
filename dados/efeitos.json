@@ -18,5 +18,213 @@
   "explosao_ao_capturar": {
     "icone": "✷",
     "desc": "Ao capturar, destrói as peças inimigas vizinhas ao destino."
+  },
+  "moedas_ao_ser_capturada": {
+    "icone": "¢",
+    "desc": "Ao ser capturada, você ganha {valor} moeda(s)."
+  },
+  "moedas_aleatorias_ao_capturar": {
+    "icone": "?",
+    "desc": "Ao capturar, ganha de {min} a {max} moedas (sorteado)."
+  },
+  "moedas_serie": {
+    "icone": "»",
+    "desc": "Ao capturar, ganha 1 moeda por captura seguida sem perder peça (máx. {max})."
+  },
+  "moedas_por_rodada": {
+    "icone": "☼",
+    "desc": "No fim da batalha, se sobreviver, ganha {valor} moeda(s) a cada {a_cada} rodadas."
+  },
+  "moedas_crescentes": {
+    "icone": "↑",
+    "desc": "No fim da batalha, se sobreviver, ganha moedas que crescem com as rodadas (1, 3, 6... a cada 4 rodadas, máx. {max})."
+  },
+  "moedas_alvo_rei": {
+    "icone": "†",
+    "desc": "Ganha {valor} moedas extras ao capturar um rei."
+  },
+  "moedas_alvo_mais_caro": {
+    "icone": "▲",
+    "desc": "Ganha {valor} moedas extras ao capturar uma peça mais valiosa que ela."
+  },
+  "moedas_alvo_especial": {
+    "icone": "✦",
+    "desc": "Ganha {valor} moedas extras ao capturar uma peça com efeito especial."
+  },
+  "moedas_alvo_com_moedas": {
+    "icone": "¤",
+    "desc": "Ganha {valor} moedas extras ao capturar uma peça que gera moedas."
+  },
+  "moedas_alvo_isolado": {
+    "icone": "○",
+    "desc": "Ganha {valor} moedas extras ao capturar uma peça sem aliados por perto."
+  },
+  "moedas_alvo_cercado": {
+    "icone": "◎",
+    "desc": "Ganha {valor} moedas extras ao capturar uma peça com 2 ou mais aliados por perto."
+  },
+  "moedas_ultima_viva": {
+    "icone": "◆",
+    "desc": "No fim da batalha, ganha {valor} moedas se for a sua última peça viva."
+  },
+  "moedas_por_aliado": {
+    "icone": "∑",
+    "desc": "No fim da batalha, ganha {valor} moeda(s) por aliado vivo."
+  },
+  "moedas_por_tipo": {
+    "icone": "≡",
+    "desc": "No fim da batalha, ganha {valor} moeda(s) por tipo de peça diferente que sobreviveu."
+  },
+  "moedas_ultima_linha": {
+    "icone": "⇑",
+    "desc": "Ganha {valor} moedas ao chegar à última linha."
+  },
+  "moedas_centro": {
+    "icone": "⊕",
+    "desc": "Ganha {valor} moedas na primeira vez que pisa no centro do tabuleiro."
+  },
+  "moedas_se_parada": {
+    "icone": "▣",
+    "desc": "No fim da batalha, ganha {valor} moedas se nunca se moveu."
+  },
+  "escudo_ao_capturar": {
+    "icone": "♦",
+    "desc": "Ao capturar, ganha {valor} escudo."
+  },
+  "escudo_ao_capturar_mais_caro": {
+    "icone": "♢",
+    "desc": "Ao capturar uma peça mais valiosa que ela, ganha {valor} escudo."
+  },
+  "escudo_a_cada_capturas": {
+    "icone": "◇",
+    "desc": "A cada {n} capturas, ganha {valor} escudo."
+  },
+  "escudo_primeira_rodada": {
+    "icone": "☾",
+    "desc": "Começa com {valor} escudo, que some depois da primeira rodada."
+  },
+  "escudo_todos_inicio": {
+    "icone": "☀",
+    "desc": "No início da batalha, todo o seu exército ganha {valor} escudo."
+  },
+  "escudo_vizinhos_inicio": {
+    "icone": "▦",
+    "desc": "No início da batalha, aliados a até {alcance} casa(s) de distância ganham {valor} escudo."
+  },
+  "escudo_linha_inicio": {
+    "icone": "▥",
+    "desc": "No início da batalha, aliados na mesma linha ganham {valor} escudo."
+  },
+  "escudo_aliado_ao_capturar": {
+    "icone": "✚",
+    "desc": "Ao capturar, um aliado vizinho ganha {valor} escudo."
+  },
+  "escudo_aliados_ao_ser_capturada": {
+    "icone": "✺",
+    "desc": "Ao ser capturada, todos os aliados ganham {valor} escudo."
+  },
+  "escudo_parado": {
+    "icone": "▤",
+    "desc": "Começa com {valor} escudo, que se perde quando a peça se move."
+  },
+  "escudo_minoria": {
+    "icone": "⚑",
+    "desc": "No início da batalha, ganha {valor} escudo se o seu exército tiver menos peças que o inimigo."
+  },
+  "chance_evitar": {
+    "icone": "☘",
+    "desc": "Tem {pct}% de chance de evitar cada captura."
+  },
+  "chance_evitar_uma_vez": {
+    "icone": "☆",
+    "desc": "Uma vez por batalha, tem {pct}% de chance de evitar a captura."
+  },
+  "escudo_renovavel": {
+    "icone": "∞",
+    "desc": "A cada {a_cada} rodadas, recupera o escudo se ele tiver sido gasto."
+  },
+  "imortal": {
+    "icone": "☥",
+    "desc": "Sobrevive à primeira captura, mas perde as habilidades."
+  },
+  "quebra_escudo": {
+    "icone": "⚒",
+    "desc": "Ao capturar, ignora o escudo do alvo (destrói o escudo inteiro)."
+  },
+  "explosao_cruz_ao_ser_capturada": {
+    "icone": "✢",
+    "desc": "Ao ser capturada, destrói os inimigos nas 4 casas ao redor (cruz)."
+  },
+  "explosao_diagonal_ao_ser_capturada": {
+    "icone": "✣",
+    "desc": "Ao ser capturada, destrói os inimigos nas 4 diagonais vizinhas."
+  },
+  "explosao_diagonais_inteiras": {
+    "icone": "❈",
+    "desc": "Ao ser capturada, destrói os inimigos em todas as suas diagonais."
+  },
+  "explosao_linha_coluna_ao_ser_capturada": {
+    "icone": "✥",
+    "desc": "Ao ser capturada, destrói os inimigos na linha e na coluna (até {alcance} casas)."
+  },
+  "explosao_vizinhas_ao_ser_capturada": {
+    "icone": "✸",
+    "desc": "Ao ser capturada, destrói os inimigos nas 8 casas vizinhas."
+  },
+  "explosao_area_ao_ser_capturada": {
+    "icone": "❂",
+    "desc": "Ao ser capturada, destrói os inimigos a até {alcance} casas de distância."
+  },
+  "explosao_ao_redor_do_atacante": {
+    "icone": "✶",
+    "desc": "Ao ser capturada, destrói também os inimigos vizinhos ao atacante."
+  },
+  "cadeia_ao_capturar": {
+    "icone": "ϟ",
+    "desc": "Ao capturar, destrói até {valor} inimigo(s) vizinho(s) ao destino."
+  },
+  "mutante": {
+    "icone": "✱",
+    "desc": "No início da batalha, ganha uma habilidade aleatória."
+  },
+  "berserker": {
+    "icone": "⚔",
+    "desc": "Cada captura aumenta o alcance de movimento da peça (até {max} níveis)."
+  },
+  "errante": {
+    "icone": "↯",
+    "desc": "Uma vez por batalha, pode dar um passo reto para uma casa vazia (troca de diagonal)."
+  },
+  "troca_diagonal": {
+    "icone": "⇄",
+    "desc": "Pode trocar de lugar com um aliado na mesma diagonal (uma vez a cada 3 turnos)."
+  },
+  "troca_qualquer": {
+    "icone": "⇆",
+    "desc": "Uma vez por batalha, troca de lugar com qualquer aliado."
+  },
+  "peao_saltador": {
+    "icone": "⤴",
+    "desc": "Se a casa da frente estiver ocupada, pula para a seguinte (se estiver vazia)."
+  },
+  "peao_independente": {
+    "icone": "⇥",
+    "desc": "Se houver um aliado na casa da frente, passa por cima dele."
+  },
+  "pacifista": {
+    "icone": "☮",
+    "desc": "Nunca captura. Se houver um inimigo na frente, passa por cima dele. A promoção apaga este efeito."
+  },
+  "bispo_independente": {
+    "icone": "≈",
+    "desc": "Pode atravessar uma peça aliada em cada diagonal."
+  },
+  "rei_ausente": {
+    "icone": "◌",
+    "desc": "Se houver uma peça ao lado, pula por cima dela e cai duas casas adiante (captura se for inimiga)."
+  },
+  "parasita": {
+    "icone": "☣",
+    "desc": "Ao capturar, no próximo movimento anda como a peça capturada (sem copiar habilidades)."
   }
 }
