@@ -14,6 +14,12 @@ let pendenteSubstituir = null; // carta do pacote aguardando a escolha da carta 
 let ultimaCompra = null;
 let verColecao = false;
 let verComoJogar = false;
+let lateralAberta = false;    //no celular: painel de cartas aberto ou fechado
+let telaAnterior = null;
+let larguraAnterior = window.innerWidth;
+
+//true em telas estreitas (celular em pé), onde o menu lateral vira uma faixa no topo
+function ehCelular() { return window.matchMedia('(max-width: 820px)').matches; }
 
 function simbolo(tipo) { return SIMBOLO[tipo] + '︎'; } // ︎ evita virar emoji
 
@@ -54,6 +60,8 @@ async function chamar(acao, dados) {
   guardar('gambito_run', json._run);
   guardar('gambito_colecao', json.colecao);
   delete json._run;
+  if (json.tela !== telaAnterior) lateralAberta = false;  //mudou de tela: fecha o painel de cartas
+  telaAnterior = json.tela;
   E = json;
   desenhar();
   esperarInimigo();
@@ -69,7 +77,11 @@ function avisar(texto) {
 //---------- tabuleiro
 function desenharTabuleiro(b) {
   const n = b.n;
-  const largura = Math.max(280, Math.min(window.innerWidth - 380, window.innerHeight - (b.fase === 'posicionando' ? 330 : 200), 600));
+  const posicionando = b.fase === 'posicionando';
+  let largura;
+  if (ehCelular()) largura = Math.max(240, Math.min(window.innerWidth - 20, window.innerHeight - (posicionando ? 350 : 210), 600));
+  else if (window.innerHeight <= 520) largura = Math.max(220, Math.min(window.innerWidth - 330, window.innerHeight - (posicionando ? 200 : 110), 600));  //celular deitado
+  else largura = Math.max(280, Math.min(window.innerWidth - 380, window.innerHeight - (posicionando ? 330 : 200), 600));
   const tam = largura / n;
   const mapa = {};
   b.pecas.forEach(p => mapa[p.linha + ',' + p.col] = p);
@@ -107,7 +119,7 @@ function cartaExercito(chave, i, extra) {
   const efeitosExtras = (E.extras[i] || []);
   const marcado = efeitosExtras.length ? ' ★' : '';
   return `<div class="carta ${extra || ''}" onclick="clicouCarta(${i})" title="${p.desc}">
-    <div class="icone">${simbolo(p.tipo)}</div>${p.nome}${marcado}</div>`;
+    <div class="icone">${simbolo(p.tipo)}</div>${p.nome}${marcado}<small class="so-celular">${p.desc}</small></div>`;
 }
 
 //---------- cartas (permanentes e consumíveis)
@@ -140,27 +152,39 @@ function painelCartas() {
 
 async function usarCarta(i) {
   const c = E.cartas_catalogo[E.consumiveis[i]];
+  lateralAberta = false;  //no celular, fecha o painel para você tocar na peça
   if (c.alvo === 'minha_peca') { usando = (usando === i ? null : i); return desenhar(); }
   await chamar('usar_carta', { indice: i });
 }
 
 //---------- menu lateral (parecido com o do Balatro)
 function lateral(titulo, info) {
-  return `<aside class="lateral">
+  return `<aside class="lateral${lateralAberta ? ' aberto' : ''}">
     <div class="lat-titulo">${titulo}</div>
-    <div class="painel">${info}</div>
+    <div class="painel info">${info}</div>
     <div class="painel moedas"><span class="cifrao">$</span><span>${E.moedas}</span></div>
-    ${painelCartas()}
-    <div class="lat-botoes">
-      <button class="bt laranja peq" onclick="verColecao=true;desenhar()">Coleção</button>
-      <button class="bt vermelho peq" onclick="abandonar()">Abandonar</button>
-    </div></aside>`;
+    <button class="bt azul peq lat-toggle" onclick="alternarLateral()">Cartas ${E.cartas.length + E.consumiveis.length}</button>
+    <div class="lat-corpo">
+      ${painelCartas()}
+      <div class="lat-botoes">
+        <button class="bt laranja peq" onclick="verColecao=true;desenhar()">Coleção</button>
+        <button class="bt vermelho peq" onclick="abandonar()">Abandonar</button>
+      </div></div></aside>`;
+}
+
+//abre ou fecha o painel de cartas (só aparece no celular)
+function alternarLateral() {
+  lateralAberta = !lateralAberta;
+  const l = document.querySelector('.lateral');
+  if (l) l.classList.toggle('aberto', lateralAberta);
 }
 
 function infoGeral() { return `${E.estagio.nome} · Batalha ${E.num}${E.estagio.chefe ? ' · CHEFE' : ''}`; }
 
 function comLateral(titulo, info, principal) {
-  return `<div class="layout">${lateral(titulo, info)}<main class="central">${principal}</main></div>`;
+  //no celular o painel de cartas fica fechado, então o aviso de "escolha uma peça" aparece aqui também
+  const avisoUso = usando !== null ? `<div class="aviso-uso topo-uso">Toque na peça que receberá o efeito. <button class="bt cinza mini-bt" onclick="usando=null;desenhar()">Cancelar</button></div>` : '';
+  return `<div class="layout">${lateral(titulo, info)}<main class="central">${avisoUso}${principal}</main></div>`;
 }
 
 //---------- telas
@@ -461,5 +485,10 @@ async function iniciar() {
     await chamar('estado');
   }
 }
-window.addEventListener('resize', () => { if (E && E.batalha) desenhar(); });
+//refaz o tabuleiro quando a largura muda (girar o celular, redimensionar a janela)
+window.addEventListener('resize', () => {
+  if (window.innerWidth === larguraAnterior) return;  //só a barra do navegador mudou de altura
+  larguraAnterior = window.innerWidth;
+  if (E && E.batalha) desenhar();
+});
 iniciar();

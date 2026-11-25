@@ -188,3 +188,78 @@ body.run { padding: 0; }
 .como-jogar p, .como-jogar li { line-height: 1.55; }
 .como-jogar ul { padding-left: 20px; margin: 6px 0; }
 .barra-botoes .bt { width: 280px; padding-left: 0; padding-right: 0; }
+
+
+/*===== CELULAR E TELAS PEQUENAS =====*/
+.lat-toggle { display: none; }
+.lat-corpo { display: contents; }
+.so-celular, .topo-uso { display: none; }
+#aviso { max-width: 90vw; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .menu-fundo, .carta-titulo { animation: none; } }
+@media (hover: none) { button:hover, .bt:hover, .carta:hover, .pacote-visual:hover { transform: none !important; } }
+
+/*celular deitado: menu lateral mais estreito*/
+@media (min-width: 821px) and (max-height: 520px) { .lateral { width: 240px; } .lat-titulo.placa { font-size: 24px; padding: 8px; } }
+
+@media (max-width: 820px) {
+  body { padding: 8px; font-size: 15px; }
+  body.run { padding: 0; }
+  .menu-fundo { inset: -30%; filter: blur(14px) saturate(1.15); }
+
+  /*menu inicial*/
+  .menu-conteudo { height: 100vh; height: 100dvh; gap: 36px; padding: 0 14px; box-sizing: border-box; }
+  .barra-botoes { flex-direction: column; width: 100%; max-width: 340px; box-sizing: border-box; }
+  .barra-botoes .bt { width: 100%; }
+  .grande-bt { font-size: 24px; padding: 16px 10px; }
+
+  /*faixa no topo no lugar do menu lateral*/
+  .layout { flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+  .lateral { width: 100%; height: auto; position: sticky; top: 0; z-index: 20; overflow: visible; border-right: none; border-bottom: 4px solid #2a6fd0;
+    box-shadow: 0 6px 18px rgba(0,0,0,.5); padding: 6px 8px; gap: 6px; display: grid; grid-template-columns: 1fr auto auto;
+    grid-template-areas: "titulo moedas botao" "info info info"; align-items: center; }
+  .lat-titulo { grid-area: titulo; font-size: 16px; padding: 6px; }
+  .lat-titulo.placa { font-size: 20px; letter-spacing: 2px; padding: 8px 6px; outline-offset: -6px; }
+  .painel.moedas { grid-area: moedas; font-size: 24px; padding: 2px 12px; gap: 4px; }
+  .lat-toggle { display: block; grid-area: botao; font-size: 15px; padding: 10px 12px; }
+  .painel.info { grid-area: info; font-size: 12px; padding: 4px 8px; line-height: 1.35; }
+  .painel.info .grande-num { display: inline; font-size: 16px; margin: 0 8px 0 0; }
+  .painel.info .log { display: none; }
+  .lateral.aberto .painel.info .log { display: block; }
+  .lat-corpo { display: none; }
+  .lateral.aberto .lat-corpo { display: flex; flex-direction: column; gap: 8px; position: absolute; top: 100%; left: 0; right: 0; z-index: 30;
+    max-height: calc(100vh - 150px); max-height: calc(100dvh - 150px); overflow-y: auto; box-sizing: border-box; padding: 10px;
+    background: rgba(24,32,36,.98); border-bottom: 4px solid #2a6fd0; box-shadow: 0 14px 24px rgba(0,0,0,.55); }
+  .lat-botoes { margin-top: 4px; }
+  .topo-uso { display: block; text-align: center; margin: 0; }
+
+  /*área central*/
+  .central { justify-content: flex-start; padding: 10px 8px 28px; gap: 10px; }
+  .centralizado { min-height: 100vh; min-height: 100dvh; padding: 10px; box-sizing: border-box; }
+  .grande-titulo { font-size: 26px; }
+  .dica { font-size: 13px; }
+  .tabuleiro { border-width: 4px; }
+
+  /*cartas e peças*/
+  .carta { width: calc(50% - 6px); box-sizing: border-box; padding: 6px; font-size: 12px; }
+  .carta .icone { font-size: 28px; }
+  .central > .lista.centro > .carta:not(.grande) { width: calc(25% - 8px); padding: 6px 2px; font-size: 11px; }
+  .carta.mini { width: calc(50% - 6px); }
+  .carta.grande { width: 100%; max-width: 320px; }
+  .mini-bt { font-size: 14px !important; padding: 8px 12px !important; }
+  .area-exercito .so-celular { display: block; }
+  .area-exercito .lista.centro .carta { width: calc(50% - 8px); }
+  .area-exercito { padding: 8px; }
+
+  /*loja*/
+  .loja-painel { flex-direction: column; padding: 10px; border-width: 4px; }
+  .loja-botoes { flex-direction: row; width: 100%; }
+  .loja-botoes .bt { font-size: 15px; padding: 12px 6px; }
+  .item .carta, .pacote-visual { width: min(150px, calc(50vw - 36px)); }
+  .relatorio { font-size: 13px; gap: 4px 12px; }
+  .relatorio .grande-titulo { font-size: 20px; }
+
+  /*coleção, como jogar e derrota*/
+  .como-jogar { margin-bottom: 20px; }
+  .caixa { padding: 10px; }
+  .fim { text-align: center; }
+}
