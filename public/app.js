@@ -49,26 +49,48 @@ function atualizarBotaoSom() {
   if (b) { b.textContent = mudo ? '🔇' : '🔊'; b.title = mudo ? 'Ligar o som' : 'Desligar o som'; }
 }
 
-//animação rápida de vitória (confete) ou derrota (tela escurece e treme)
+//transição de fim de batalha: mostra o tabuleiro final com a animação e só então troca para a loja (ou para a derrota)
+let emTransicao = false;
+function resultadoDaBatalha(antes, depois) {
+  if (!antes || antes.tela !== 'batalha') return null;
+  if (depois.tela === 'loja') return 'win';
+  if (depois.tela === 'derrota') return 'lose';
+  return null;
+}
+
+function transicaoFim(venceu, real) {
+  emTransicao = true;
+  E = Object.assign({}, real, { tela: 'batalha', pacote: null });  //mostra o tabuleiro final, como se a batalha ainda estivesse aberta
+  desenhar();
+  animarFim(venceu);
+  setTimeout(() => { E = real; emTransicao = false; desenhar(); }, 2400);  //com a tela coberta, troca para a loja
+}
+
+//animação de vitória (confete) ou derrota (tela escurece e treme)
 function animarFim(venceu) {
   const fx = document.createElement('div');
   fx.className = 'fx-fim ' + (venceu ? 'fx-vitoria' : 'fx-derrota');
-  let html = `<div class="fx-texto">${venceu ? 'VITÓRIA!' : 'DERROTA'}</div>`;
+  let html = `<div class="fx-vinheta"></div><div class="fx-texto">${venceu ? 'VITÓRIA!' : 'DERROTA'}</div>`;
   if (venceu) {
     const cores = ['#f0b030', '#1d7cf2', '#e8403a', '#2f9d6a', '#f4efe2'];
     for (let i = 0; i < 40; i++) {
       html += `<i style="left:${Math.random() * 100}%; background:${cores[i % cores.length]}; animation-delay:${(Math.random() * 0.6).toFixed(2)}s; animation-duration:${(1.4 + Math.random() * 1).toFixed(2)}s"></i>`;
     }
+  } else {
+    const tela = document.getElementById('tela');
+    tela.classList.add('tremer');
+    setTimeout(() => tela.classList.remove('tremer'), 1000);
   }
+  html += '<div class="fx-cortina"></div>';  //cobre a tela no meio da animação, na hora da troca
   fx.innerHTML = html;
   document.body.appendChild(fx);
-  setTimeout(() => fx.remove(), 2600);
+  setTimeout(() => fx.remove(), 3300);
 }
 
 //compara o estado antes e depois da ação para decidir qual som tocar
 function efeitosDaAcao(acao, antes, depois) {
-  if (antes && antes.tela === 'batalha' && depois.tela === 'loja') { tocar('win'); animarFim(true); return; }
-  if (antes && antes.tela === 'batalha' && depois.tela === 'derrota') { tocar('lose'); animarFim(false); return; }
+  const fim = resultadoDaBatalha(antes, depois);
+  if (fim) { tocar(fim); return; }
   if (antes && antes.batalha && depois.batalha) {
     const tipos = {};
     antes.batalha.pecas.forEach(p => tipos[p.uid] = p.tipo);
@@ -125,6 +147,8 @@ async function chamar(acao, dados) {
   const antes = E;
   E = json;
   efeitosDaAcao(acao, antes, json);
+  const fim = resultadoDaBatalha(antes, json);
+  if (fim && json.batalha) { transicaoFim(fim === 'win', json); return true; }
   desenhar();
   esperarInimigo();
   return true;

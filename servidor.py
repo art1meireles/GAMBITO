@@ -41,7 +41,7 @@ def estado_para_o_navegador():
         s['precos'] = {'ofertas': [cartas.preco_da_peca(k) for k in lj['ofertas']],
                        'misteriosa': cartas.preco_da_misteriosa(), 'troca': cartas.custo_da_troca(lj)}
     b = r['batalha']
-    if b and r['tela'] in ('posicionamento', 'batalha'):
+    if b and r['tela'] in ('posicionamento', 'batalha', 'loja', 'derrota'):  # loja e derrota: o tabuleiro final aparece na transição
         pecas = b['pecas']
         if b['fase'] == 'posicionando':  # mostra as peças já colocadas
             pecas = [dict(p) for p in b['inimigos']]
