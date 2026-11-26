@@ -217,6 +217,8 @@ def jogada_inimiga(batalha):
             for (l, c) in movimentos(batalha['pecas'], p, batalha['n']):
                 opcoes.append((p, l, c))
     if not opcoes:
+        batalha['log'].append('O inimigo não tem jogadas e perde a vez.')
+        batalha['aviso'] = 'O inimigo não tem jogadas e perde a vez.'
         return
     inteligencia = batalha['inteligencia']  # chance de jogar bem (vem do estágio)
     if aleatorio or random.random() >= inteligencia:

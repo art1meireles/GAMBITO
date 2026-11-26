@@ -49,7 +49,7 @@ def _batalha():
     return estado.duelo['batalha']
 
 
-# ---------- começo
+# começo
 def novo():
     estado.duelo = {
         'fase': 'sorteio',
@@ -73,7 +73,7 @@ def avancar():
     d['vez'] = d['abre']
 
 
-# ---------- banimentos (alternados e públicos)
+# banimentos (alternados e públicos)
 def _bans_ok(j):
     d = estado.duelo
     return d['fim_bans'][j] or len(d['bans'][j]) >= MAX_BANS
@@ -269,7 +269,7 @@ def _comecar_batalha():
         _proxima_vez(outro(b['primeiro']))
 
 
-# ---------- batalha
+# batalha
 def _tem_jogada(j):
     b = _batalha()
     return any(xadrez.movimentos(b['pecas'], p, b['n']) for p in b['pecas'] if p['lado'] == LADO[j])
@@ -295,6 +295,7 @@ def _proxima_vez(quem_jogou):
     elif _tem_jogada(quem_jogou):
         b['vez'] = quem_jogou
         b['log'].append('%s não tem jogadas e perde a vez.' % NOME[prox])
+        b['aviso'] = '%s não tem jogadas e perde a vez.' % NOME[prox]
     else:
         _fim(None, 'Nenhum jogador consegue se mover.')
 
@@ -325,6 +326,7 @@ def mover(de, para):
     if tuple(para) not in xadrez.movimentos(b['pecas'], p, b['n']):
         raise ValueError('Movimento ilegal')
     b['movs'] += 1
+    b['aviso'] = ''
     xadrez.mover(b, p, para[0], para[1])
     azul, vermelho = xadrez.contar(b, 'j'), xadrez.contar(b, 'i')
     if not azul and not vermelho:
@@ -353,7 +355,7 @@ def proxima():
         _iniciar_partida()
 
 
-# ---------- o que o navegador recebe
+# o que o navegador recebe
 def _ameacas(b):
     #Casas que o adversário de quem joga poderia alcançar (realce de alcance inimigo)
     outro = LADO['v' if b['vez'] == 'a' else 'a']
@@ -381,7 +383,7 @@ def visao():
             pecas = [peca_montada(j, int(i), l, c) for j in JOGADORES for i, (l, c) in b['posicoes'][j].items()]
         v['batalha'] = {'n': b['n'], 'pecas': pecas, 'zonas': b['zonas'], 'primeiro': b['primeiro'], 'montando': b['montando'],
                         'vez': b['vez'], 'rodadas': b['rodadas'], 'log': b['log'][-10:], 'resultado': b['resultado'],
-                        'fase': b['fase'], 'posicoes': b['posicoes'],
+                        'fase': b['fase'], 'posicoes': b['posicoes'], 'aviso': b.get('aviso', ''),
                         'jogadas': jogadas(b['vez']) if d['fase'] == 'batalha' else {},
                         'ameacas': _ameacas(b) if d['fase'] == 'batalha' else []}
     return v

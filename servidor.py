@@ -65,7 +65,7 @@ def estado_para_o_navegador():
         limite = cartas.limite_de_rodadas()
         s['batalha'] = {'n': b['n'], 'pecas': pecas, 'posicoes': b['posicoes'], 'rodadas': b['rodadas'],
                         'log': b['log'][-12:], 'jogadas': jogadas, 'zona_inicio': b['zona_inicio'],
-                        'ameacas': ameacas, 'limite': limite, 'fase': b['fase'], 'vez': b['vez']}
+                        'ameacas': ameacas, 'limite': limite, 'fase': b['fase'], 'vez': b['vez'], 'aviso': b.get('aviso', '')}
         if b.get('modo_teste'):
             s['teste'] = {'bonus': b['bonus'], 'serie': b.get('serie', 0), 'turnos': b['turnos'],
                           'parado': bool(b.get('inimigo_parado')), 'nivel': b.get('nivel_teste', '')}

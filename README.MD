@@ -56,7 +56,7 @@ As peças inimigas aparecem reveladas. As peças do jogador são colocadas na **
 
 ### Turnos
 
-Quem monta primeiro joga primeiro. Como o campo inimigo já está montado quando o jogador posiciona o exército, a CPU abre cada batalha. Depois o jogador move uma peça por turno, e a CPU responde 1 segundo depois. Cada jogada do jogador conta como uma **rodada**.
+Quem monta primeiro joga primeiro. Como o campo inimigo já está montado quando o jogador posiciona o exército, a CPU abre cada batalha. Depois o jogador move uma peça por turno, e a CPU responde 1 segundo depois. Cada jogada do jogador conta como uma **rodada**. Quem não tem jogadas perde a vez (a vez perdida também conta como rodada), e a batalha só termina por falta de movimentos se nenhum dos lados puder jogar.
 
 Ao selecionar uma peça, o tabuleiro mostra as jogadas possíveis:
 - ponto verde: movimento;

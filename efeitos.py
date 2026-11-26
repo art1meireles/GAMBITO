@@ -6,6 +6,7 @@ Para criar um efeito novo:
   3) use o nome dele no campo "efeitos" de qualquer peça em dados/pecas.json.
 """
 import random
+import estado
 
 import dados
 
@@ -44,7 +45,8 @@ def no_inicio_da_batalha(batalha):
     for p in pecas:  # primeiro as mutantes, para as habilidades sorteadas já valerem abaixo
         for e in list(p['efeitos']):
             if e['tipo'] == 'mutante':
-                novo = dict(random.choice(SORTEIO_MUTANTE))
+                sorteio = SORTEIO_MUTANTE if estado.duelo is None else [x for x in SORTEIO_MUTANTE if not x['tipo'].startswith('moedas')]  #o duelo não tem moedas
+                novo = dict(random.choice(sorteio))
                 p['efeitos'] = [x for x in p['efeitos'] if x is not e] + [novo]
                 if novo['tipo'] == 'escudo':
                     p['escudo'] += novo['valor']

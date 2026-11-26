@@ -158,12 +158,15 @@ function painelDaPeca(pecas, achar, rotulo) {
     ${efs}${estado.length ? `<div class="ef-estado">${estado.join(' · ')}</div>` : ''}</div>`;
 }
 
-//No computador o painel de detalhes fica numa coluna ao lado do tabuleiro (largura sempre reservada, para o tabuleiro não se mexer); no celular fica embaixo
-function larguraDetalhe() { return ehCelular() ? 0 : (window.innerHeight <= 520 ? 220 : 300); }
+//No computador o painel de detalhes fica na lateral direita da tela (como o painel de cartas na esquerda) e o tabuleiro continua centralizado.
+//Se o tabuleiro for largo demais para sobrar espaço dos dois lados, ou no celular, o painel fica embaixo dele
+let ultimaLargura = 0;
+function larguraDetalhe() { return ehCelular() ? 0 : (window.innerHeight <= 520 ? 200 : 240); }
 function comDetalhe(tabuleiro, painel) {
   const w = larguraDetalhe();
-  if (!w) return `<div>${tabuleiro}</div>${painel}`;
-  return `<div class="com-detalhe"><div>${tabuleiro}</div><div class="coluna-detalhe" style="width:${w}px">${painel}</div></div>`;
+  const cabe = w && ultimaLargura <= window.innerWidth - 290 - 2 * (w + 16) - 32;
+  if (!cabe) return `<div>${tabuleiro}</div>${painel}`;
+  return `<div>${tabuleiro}</div><div class="coluna-detalhe" style="width:${w}px">${painel}</div>`;
 }
 
 //depois da jogada do jogador, a CPU joga 1 segundo depois
@@ -224,8 +227,9 @@ function desenharTabuleiro(b) {
   let largura;
   const z = escala();
   if (ehCelular()) largura = Math.max(240, Math.min(window.innerWidth - 16, window.innerHeight - (posicionando ? 350 : 210) * z, 900) / z);
-  else if (window.innerHeight <= 520) largura = Math.max(220, Math.min(window.innerWidth - 330 - larguraDetalhe() - 16, window.innerHeight - (posicionando ? 200 : 110), 760));  //celular deitado
-  else largura = Math.max(280, Math.min(window.innerWidth - 380 - larguraDetalhe() - 16, window.innerHeight - (posicionando ? 300 : 150), 760));
+  else if (window.innerHeight <= 520) largura = Math.max(220, Math.min(window.innerWidth - 330, window.innerHeight - (posicionando ? 200 : 110), 760));  //celular deitado
+  else largura = Math.max(280, Math.min(window.innerWidth - 380, window.innerHeight - (posicionando ? 300 : 150), 760));
+  ultimaLargura = largura;
   const tam = largura / n;
   const mapa = {};
   b.pecas.forEach(p => mapa[p.linha + ',' + p.col] = p);
@@ -480,6 +484,7 @@ function telaPosicionamento(tela) {
     return cartaExercito(k, i, usada + (selecionada === i ? ' escolhida' : '') + (usando !== null ? ' alvo' : ''));
   }).join('');
   const principal = `<h3>Posicione seu exército (${colocadas}/${E.exercito.length})</h3>
+    <div class="aviso-vez">O inimigo já está montado e joga primeiro nesta batalha.</div>
     ${comDetalhe(desenharTabuleiro(b), painelDaPeca(b.pecas, i => b.pecas.find(p => p.linha + ',' + p.col === i.chave)))}
     <div class="lista centro">${cartas}</div>
     <p class="dica">Clique numa peça e depois numa casa da zona azul. Clique numa peça já usada para tirá-la.</p>
@@ -498,7 +503,9 @@ function telaBatalha(tela) {
     <span class="azul-txt">Suas peças: ${minhas}</span> · <span class="verm-txt">Inimigas: ${inimigas}</span>
     <div class="log">${b.log.map(l => '<div>' + l + '</div>').join('')}</div>`;
   const botaoAmeaca = b.ameacas.length ? ` <button class="bt cinza mini-bt" onclick="verAmeacas=!verAmeacas;desenhar()">${verAmeacas ? 'Esconder' : 'Mostrar'} alcance inimigo</button>` : '';
-  const principal = `${comDetalhe(desenharTabuleiro(b), painelDaPeca(b.pecas, i => b.pecas.find(p => p.uid === i.uid)))}
+  const aviso = b.aviso ? `<div class="aviso-vez">${b.aviso}</div>`
+    : (b.rodadas === 0 && b.vez === 'inimigo' ? '<div class="aviso-vez">O inimigo joga primeiro nesta batalha.</div>' : '');
+  const principal = `${aviso}${comDetalhe(desenharTabuleiro(b), painelDaPeca(b.pecas, i => b.pecas.find(p => p.uid === i.uid)))}
     <p class="dica">Verde = mover · anel vermelho = capturar · toque numa peça para ver os detalhes${b.ameacas.length ? ' · casas avermelhadas = alcance inimigo' : ''}${botaoAmeaca}</p>`;
   tela.innerHTML = comLateral(E.estagio.chefe ? `CHEFE · Batalha ${E.num}` : `Batalha ${E.num}`, info, principal + (modoTeste ? painelTeste() : ''));
   const box = document.querySelector('.log'); if (box) box.scrollTop = box.scrollHeight;

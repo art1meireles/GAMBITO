@@ -28,12 +28,20 @@ async function dSair() {
   await chamar('duelo_sair');
 }
 
+async function dReiniciar() {
+  const v = E.duelo;
+  if (v.fase !== 'fim' && !confirm('Reiniciar o duelo? O match atual será perdido e um novo sorteio começa.')) return;
+  dSel = null; dPal = { busca: '', tipo: '', sel: null }; inspecionada = null;
+  await chamar('duelo_novo');
+}
+
 function dPlacar(v) {
   const meioTexto = { sorteio: 'Sorteio', banimentos: 'Banimentos', draft: 'Draft', fim: 'Resultado final' }[v.fase]
     || `Batalha ${v.partida + 1} de ${v.total}`;
   return `<div class="d-placar"><div class="d-lado c-a">AZUL <b>${meio(v.pontos.a)}</b></div>
     <div class="d-centro">${meioTexto}</div>
     <div class="d-lado c-v"><b>${meio(v.pontos.v)}</b> VERMELHO</div>
+    <button class="bt cinza mini-bt" onclick="dReiniciar()">${v.fase === 'fim' ? 'Revanche' : 'Reiniciar'}</button>
     <button class="bt cinza mini-bt" onclick="dSair()">Sair</button></div>`;
 }
 
@@ -129,7 +137,8 @@ function dBatalha(v) {
   if (v.fase === 'montagem') {
     const j = b.montando, z = b.zonas[j], linhas = z[1] - z[0];
     const regra = j === b.primeiro ? 'Monta primeiro (sem ver o outro lado) e joga primeiro.' : `Monta depois, já vendo o tabuleiro do ${nomeJ(b.primeiro)}.`;
-    banner = `<div class="d-banner ${cl(j)}"><b>${nomeJ(j)}</b> monta o seu lado: ${linhas} de ${b.n} linhas. ${regra}</div>`;
+    banner = `<div class="d-banner ${cl(j)}"><b>${nomeJ(j)}</b> monta o seu lado: ${linhas} de ${b.n} linhas. ${regra}</div>
+      <div class="aviso-vez">${nomeJ(b.primeiro)} joga primeiro nesta batalha.</div>`;
     const pecas = v.exercitos[j].map((id, i) => {
       const p = E.catalogo[id], colocada = b.posicoes[j][String(i)];
       return `<div class="d-peca ${cl(j)} ${dSel === i ? 'sel' : ''} ${colocada ? 'colocada' : ''}" onclick="dEscolherPeca(${i})" title="${p.desc}">
@@ -141,7 +150,7 @@ function dBatalha(v) {
       <button class="bt verde" ${faltam ? 'disabled' : ''} onclick="dSel=null;chamar('duelo_pronto')">Pronto</button></div>
       <small>Clique numa peça já colocada para tirá-la.</small></div>`;
   } else if (v.fase === 'batalha') {
-    banner = `<div class="d-banner ${cl(b.vez)}">Vez do <b>${nomeJ(b.vez)}</b> · rodada ${b.rodadas + 1} de ${v.limite}</div>`;
+    banner = `${b.aviso ? `<div class="aviso-vez">${b.aviso}</div>` : ''}<div class="d-banner ${cl(b.vez)}">Vez do <b>${nomeJ(b.vez)}</b> · rodada ${b.rodadas + 1} de ${v.limite}</div>`;
     lateral = `<div class="caixa"><div class="rotulo">Esta batalha</div><small>${nomeJ(b.primeiro)} montou e joga primeiro · tabuleiro ${b.n}×${b.n}</small>
       <div class="rotulo">Legenda</div><small>● movimento · ○ vermelho: captura · ○ azul tracejado: troca de lugar</small>
       <div class="rotulo">Registro</div><div class="log">${b.log.slice().reverse().map(l => `<div>${l}</div>`).join('')}</div></div>`;
@@ -231,7 +240,8 @@ function dFim(v) {
   const linhas = v.resultados.map(r => `<tr><td>${r.partida + 1}</td><td>${r.n}×${r.n}</td><td class="${cl(r.primeiro)}">${nomeJ(r.primeiro)}</td>
     <td class="${r.vencedor ? cl(r.vencedor) : ''}">${r.vencedor ? nomeJ(r.vencedor) : 'Empate'}</td></tr>`).join('');
   return `${banner}<div class="caixa d-caixa"><table class="teste-tabela"><tr><th>Batalha</th><th>Tabuleiro</th><th>Montou primeiro</th><th>Resultado</th></tr>${linhas}</table>
-    <button class="bt azul grande-bt" onclick="dSel=null;chamar('duelo_sair')">Voltar ao menu</button></div>`;
+    <div class="lista centro"><button class="bt verde grande-bt" onclick="dReiniciar()">Revanche</button>
+    <button class="bt azul grande-bt" onclick="dSel=null;chamar('duelo_sair')">Voltar ao menu</button></div></div>`;
 }
 
 //---------- sons (chamado pelo app.js depois de cada ação)

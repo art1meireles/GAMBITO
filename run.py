@@ -244,6 +244,7 @@ def jogada_do_jogador(de, para):
         raise ValueError('Jogada inválida')
     if tuple(para) not in xadrez.movimentos(b['pecas'], p, b['n']):
         raise ValueError('Movimento ilegal')
+    b['aviso'] = ''
     b['turnos'] += 1
     if b['rodadas_gratis'] > 0:  # algumas cartas fazem jogadas não contarem como rodada
         b['rodadas_gratis'] -= 1
@@ -279,8 +280,14 @@ def vez_do_inimigo():
         if limite and b['turnos'] >= limite:
             return fim_de_batalha(False, f'Acabou o tempo ({limite} rodadas).')
     tem_jogada = any(xadrez.movimentos(b['pecas'], q, b['n']) for q in b['pecas'] if q['lado'] == 'j')
-    if not tem_jogada:
-        return fim_de_batalha(False, 'Você ficou sem movimentos.')
+    if not tem_jogada:  # sem jogadas, o jogador perde a vez (como no duelo); se o inimigo também não pode se mover, a batalha acaba
+        if not any(xadrez.movimentos(b['pecas'], q, b['n']) for q in b['pecas'] if q['lado'] == 'i'):
+            return fim_de_batalha(False, 'Nenhum lado consegue se mover.')
+        b['turnos'] += 1  # a vez perdida conta como rodada, para o limite de rodadas continuar valendo
+        b['rodadas'] += 1
+        b['vez'] = 'inimigo'
+        b['log'].append('Você não tem jogadas e perde a vez.')
+        b['aviso'] = 'Você não tem jogadas e perde a vez.'
 
 
 def checar_vitoria():
