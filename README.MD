@@ -63,6 +63,8 @@ Ao selecionar uma peça, o tabuleiro mostra as jogadas possíveis:
 - anel vermelho: captura;
 - anel azul tracejado: **troca de lugar** com um aliado.
 
+Tocar em qualquer peça, da própria ou do inimigo, abre um painel com o nome, a descrição e os efeitos dela. Marcadores dentro da peça indicam o estado atual: nível do Berserker (Nv), recarga da troca de lugar (⏳), habilidade de uso único já gasta (✕) e movimento copiado pelo Parasita (☣). As casas que o inimigo pode alcançar ficam avermelhadas na run (com a carta Casas Ameaçadas), no modo de teste e no Duelo, e um botão liga e desliga o realce.
+
 No fim da batalha, uma animação de vitória ou derrota faz a transição para a loja ou para a tela final.
 
 ### Movimento das peças
@@ -82,7 +84,7 @@ Não há roque, "en passant", movimento duplo do peão nem regra de xeque. O rei
 
 ## Peças e efeitos
 
-O jogo tem **208 peças na loja**. Cada peça é um tipo (Peão, Cavalo, Bispo, Torre, Rainha ou Rei) mais uma lista de **efeitos**, que podem ser combinados. As famílias de efeitos são:
+O jogo tem **195 peças na loja**. Cada peça é um tipo (Peão, Cavalo, Bispo, Torre, Rainha ou Rei) mais uma lista de **efeitos**, que podem ser combinados. As famílias de efeitos são:
 
 - **Escudo:** absorve capturas. Quando a peça com escudo é atacada, o escudo se gasta e o atacante **não se move**. Há escudos que protegem aliados, que se renovam e que quebram o escudo do alvo.
 - **Explosões:** ao ser capturada (ou ao capturar), a peça destrói outras ao redor, em cruz, em diagonais ou em área, ou leva o atacante junto.

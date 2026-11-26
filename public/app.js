@@ -12,6 +12,8 @@ const CHAVE_RUN = modoTeste ? 'gambito_teste_run' : 'gambito_run';
 const CHAVE_COLECAO = modoTeste ? 'gambito_teste_colecao' : 'gambito_colecao';
 const CHAVE_DUELO = modoTeste ? 'gambito_teste_duelo' : 'gambito_duelo';
 let E = null;                  // estado vindo do servidor
+let inspecionada = null;       //peça cujo painel de detalhes está aberto: {uid, chave}
+let verAmeacas = true;         //liga e desliga o realce das casas ameaçadas
 let selecionada = null;        // casa "linha,col" (batalha) ou índice do exército (posicionamento)
 let comprando = null;          // compra de peça aguardando a escolha da peça a substituir
 let usando = null;             // consumível aguardando a escolha de uma peça alvo
@@ -117,6 +119,53 @@ function iconesDosEfeitos(efeitos, escudo) {
   return icones;
 }
 
+//---------- detalhes e sinais das peças
+const NOME_TIPO = { K: 'Rei', Q: 'Rainha', R: 'Torre', B: 'Bispo', N: 'Cavalo', P: 'Peão' };
+
+function textoDoEfeito(e) {
+  const d = E.efeitos[e.tipo];
+  return d.desc.replace(/\{(\w+)\}/g, (_, k) => (e[k] !== undefined ? e[k] : ''));
+}
+
+//Marcadores de estado dentro da peça: nível, recarga da troca e habilidade de uso único já gasta
+function marcadoresDaPeca(p) {
+  const tem = t => p.efeitos.some(e => e.tipo === t);
+  let m = '';
+  if (tem('berserker') && p.nivel) m += `<span class="marca m-nivel" title="Nível do Berserker">Nv${p.nivel}</span>`;
+  if (p.espera > 0) m += `<span class="marca m-espera" title="Troca de lugar em ${p.espera} turno(s)">⏳${p.espera}</span>`;
+  if ((tem('troca_qualquer') && p.usou_troca) || (tem('errante') && p.usou_errante)) m += '<span class="marca m-usada" title="Habilidade de uso único já usada">✕</span>';
+  if (p.copia) m += `<span class="marca m-copia" title="Anda como ${NOME_TIPO[p.copia]} no próximo movimento">☣</span>`;
+  return m;
+}
+
+//Painel com nome, descrição e efeitos da peça tocada (a sua ou a do inimigo)
+function painelDaPeca(pecas, achar, rotulo) {
+  const p = inspecionada && achar(inspecionada);
+  if (!p) return '';
+  const cat = E.catalogo[p.id];
+  const nome = cat ? cat.nome : NOME_TIPO[p.tipo];
+  const lado = rotulo ? rotulo(p) : (p.lado === 'j' ? 'Sua peça' : 'Peça inimiga');
+  const efs = p.efeitos.map(e => `<div class="ef"><span class="ef-icone">${E.efeitos[e.tipo].icone}</span><span>${textoDoEfeito(e)}</span></div>`).join('')
+    || '<div class="ef"><span>Peça comum, sem habilidade.</span></div>';
+  const estado = [];
+  if (p.escudo > 0) estado.push(`Escudo: ${p.escudo}`);
+  if (p.espera > 0) estado.push(`Troca disponível em ${p.espera} turno(s)`);
+  if (p.nivel) estado.push(`Nível: ${p.nivel}`);
+  if (p.copia) estado.push(`Próximo movimento como ${NOME_TIPO[p.copia]}`);
+  return `<div class="caixa detalhe"><div class="detalhe-topo"><span class="peca-${p.lado} detalhe-peca">${simbolo(p.copia || p.tipo)}</span>
+    <div><b>${nome}</b><small>${lado} · ${NOME_TIPO[p.tipo]}</small></div>
+    <button class="bt cinza mini-bt" onclick="inspecionada=null;desenhar()">Fechar</button></div>
+    ${efs}${estado.length ? `<div class="ef-estado">${estado.join(' · ')}</div>` : ''}</div>`;
+}
+
+//No computador o painel de detalhes fica numa coluna ao lado do tabuleiro (largura sempre reservada, para o tabuleiro não se mexer); no celular fica embaixo
+function larguraDetalhe() { return ehCelular() ? 0 : (window.innerHeight <= 520 ? 220 : 300); }
+function comDetalhe(tabuleiro, painel) {
+  const w = larguraDetalhe();
+  if (!w) return `<div>${tabuleiro}</div>${painel}`;
+  return `<div class="com-detalhe"><div>${tabuleiro}</div><div class="coluna-detalhe" style="width:${w}px">${painel}</div></div>`;
+}
+
 //depois da jogada do jogador, a CPU joga 1 segundo depois
 let esperandoInimigo = false;
 function esperarInimigo() {
@@ -175,13 +224,13 @@ function desenharTabuleiro(b) {
   let largura;
   const z = escala();
   if (ehCelular()) largura = Math.max(240, Math.min(window.innerWidth - 16, window.innerHeight - (posicionando ? 350 : 210) * z, 900) / z);
-  else if (window.innerHeight <= 520) largura = Math.max(220, Math.min(window.innerWidth - 330, window.innerHeight - (posicionando ? 200 : 110), 760));  //celular deitado
-  else largura = Math.max(280, Math.min(window.innerWidth - 380, window.innerHeight - (posicionando ? 300 : 150), 760));
+  else if (window.innerHeight <= 520) largura = Math.max(220, Math.min(window.innerWidth - 330 - larguraDetalhe() - 16, window.innerHeight - (posicionando ? 200 : 110), 760));  //celular deitado
+  else largura = Math.max(280, Math.min(window.innerWidth - 380 - larguraDetalhe() - 16, window.innerHeight - (posicionando ? 300 : 150), 760));
   const tam = largura / n;
   const mapa = {};
   b.pecas.forEach(p => mapa[p.linha + ',' + p.col] = p);
   const destinos = selecionada && b.jogadas ? (b.jogadas[selecionada] || []).map(d => d.join(',')) : [];
-  const ameacas = new Set(b.ameacas.map(a => a.join(',')));
+  const ameacas = new Set(verAmeacas ? b.ameacas.map(a => a.join(',')) : []);
   let html = `<div class="tabuleiro" style="grid-template-columns: repeat(${n}, ${tam}px); width:${largura}px">`;
   for (let l = 0; l < n; l++) {
     for (let c = 0; c < n; c++) {
@@ -201,9 +250,10 @@ function desenharTabuleiro(b) {
         const selo = iconesDosEfeitos(p.efeitos, p.escudo);
         conteudo = `<div class="peca" data-uid="${p.uid}" data-l="${l}" data-c="${c}" data-lado="${p.lado}">
           <span class="peca-${p.lado}" style="font-size:${tam * 0.75}px; line-height:1">${simbolo(p.copia || p.tipo)}</span>`
-                 + (selo ? `<span class="selo">${selo}</span>` : '') + '</div>';
+                 + (selo ? `<span class="selo">${selo}</span>` : '') + marcadoresDaPeca(p) + '</div>';
       }
-      html += `<div class="${cls}" style="height:${tam}px" ${clicavel ? `onclick="clicouCasa(${l},${c})"` : ''}>${conteudo}</div>`;
+      const lerPeca = !!p && usando === null && (E.tela === 'batalha' || E.tela === 'posicionamento');  //tocar numa peça abre os detalhes
+      html += `<div class="${cls}" style="height:${tam}px" ${clicavel || lerPeca ? `onclick="clicouCasa(${l},${c})"` : ''}>${conteudo}</div>`;
     }
   }
   return html + '</div>';
@@ -430,7 +480,7 @@ function telaPosicionamento(tela) {
     return cartaExercito(k, i, usada + (selecionada === i ? ' escolhida' : '') + (usando !== null ? ' alvo' : ''));
   }).join('');
   const principal = `<h3>Posicione seu exército (${colocadas}/${E.exercito.length})</h3>
-    <div>${desenharTabuleiro(b)}</div>
+    ${comDetalhe(desenharTabuleiro(b), painelDaPeca(b.pecas, i => b.pecas.find(p => p.linha + ',' + p.col === i.chave)))}
     <div class="lista centro">${cartas}</div>
     <p class="dica">Clique numa peça e depois numa casa da zona azul. Clique numa peça já usada para tirá-la.</p>
     <div class="lista centro"><button class="bt cinza" onclick="chamar('auto')">Auto-posicionar</button>
@@ -447,8 +497,9 @@ function telaBatalha(tela) {
     <small>Média ${E.estagio.media} · Limite ${b.limite || 'nenhum'}</small><br>
     <span class="azul-txt">Suas peças: ${minhas}</span> · <span class="verm-txt">Inimigas: ${inimigas}</span>
     <div class="log">${b.log.map(l => '<div>' + l + '</div>').join('')}</div>`;
-  const principal = `<div>${desenharTabuleiro(b)}</div>
-    <p class="dica">Verde = mover · anel vermelho = capturar${b.ameacas.length ? ' · casas avermelhadas = alcance inimigo' : ''}</p>`;
+  const botaoAmeaca = b.ameacas.length ? ` <button class="bt cinza mini-bt" onclick="verAmeacas=!verAmeacas;desenhar()">${verAmeacas ? 'Esconder' : 'Mostrar'} alcance inimigo</button>` : '';
+  const principal = `${comDetalhe(desenharTabuleiro(b), painelDaPeca(b.pecas, i => b.pecas.find(p => p.uid === i.uid)))}
+    <p class="dica">Verde = mover · anel vermelho = capturar · toque numa peça para ver os detalhes${b.ameacas.length ? ' · casas avermelhadas = alcance inimigo' : ''}${botaoAmeaca}</p>`;
   tela.innerHTML = comLateral(E.estagio.chefe ? `CHEFE · Batalha ${E.num}` : `Batalha ${E.num}`, info, principal + (modoTeste ? painelTeste() : ''));
   const box = document.querySelector('.log'); if (box) box.scrollTop = box.scrollHeight;
 }
@@ -568,12 +619,14 @@ async function clicouCasa(l, c) {
     }
     return;
   }
+  inspecionada = peca ? { uid: peca.uid, chave: chave } : null;
   if (E.tela === 'posicionamento') {
     if (peca && peca.lado === 'j' && selecionada === null) { selecionada = peca.indice; return desenhar(); }
+    if (peca && peca.lado === 'i') return desenhar();  //peça inimiga: só mostra os detalhes
     if (selecionada !== null) {
       const i = selecionada; selecionada = null;
       await chamar('colocar', { indice: i, linha: l, col: c });
-    }
+    } else desenhar();
   } else if (E.tela === 'batalha') {
     if (selecionada && (b.jogadas[selecionada] || []).some(d => d.join(',') === chave)) {
       const de = selecionada.split(',').map(Number);
@@ -604,7 +657,7 @@ async function clicouCarta(i) {
 
 async function abandonar() {
   if (confirm('Abandonar a run? As peças e cartas serão perdidas.')) {
-    selecionada = null; comprando = null; usando = null; pendenteSubstituir = null; verColecao = false; verComoJogar = false;
+    selecionada = null; inspecionada = null; comprando = null; usando = null; pendenteSubstituir = null; verColecao = false; verComoJogar = false;
     await chamar('abandonar');
   }
 }

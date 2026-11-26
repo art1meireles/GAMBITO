@@ -369,3 +369,22 @@ td.c-a { color: #6fb0ff; font-weight: 700; } td.c-v { color: #ff7a74; font-weigh
   .d-grande { min-width: 0; width: 90%; padding: 12px; } .d-grande b { font-size: 44px; }
   .d-banner { font-size: 15px; padding: 8px 10px; } .d-resultado h2 { font-size: 22px; }
 }
+
+/*===== DETALHES E SINAIS DAS PEÇAS =====*/
+.marca { position: absolute; font-size: 11px; line-height: 1; font-weight: 700; padding: 2px 4px; border-radius: 8px; color: #fff; text-shadow: none; pointer-events: none; z-index: 4; }
+.m-nivel { top: 1px; left: 2px; background: #534AB7; }
+.m-espera { bottom: 1px; left: 2px; background: #854F0B; }
+.m-usada { bottom: 1px; right: 2px; background: #5F5E5A; }
+.m-copia { bottom: 1px; right: 2px; background: #993556; }
+.detalhe { width: 100%; max-width: 460px; box-sizing: border-box; text-align: left; }
+.detalhe-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.detalhe-topo > div { flex: 1; } .detalhe-topo b { display: block; font-size: 16px; } .detalhe-topo small { color: #b8cccc; }
+.detalhe-peca { font-size: 34px; line-height: 1; }
+.ef { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; padding: 4px 0; border-top: 1px solid rgba(255,255,255,.1); }
+.ef-icone { min-width: 22px; text-align: center; font-size: 16px; }
+.ef-estado { margin-top: 6px; font-size: 13px; color: #f0b030; }
+.d-sob { text-align: center; margin-top: 8px; }
+.duelo .casa.ameaca::before { content: ''; position: absolute; inset: 0; background: rgba(220,60,60,.28); pointer-events: none; }
+.com-detalhe { display: flex; gap: 16px; align-items: flex-start; justify-content: center; }
+.coluna-detalhe { flex-shrink: 0; }
+.coluna-detalhe .detalhe { max-width: none; }

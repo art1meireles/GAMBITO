@@ -49,7 +49,7 @@ def _batalha():
     return estado.duelo['batalha']
 
 
-# começo
+# ---------- começo
 def novo():
     estado.duelo = {
         'fase': 'sorteio',
@@ -73,7 +73,7 @@ def avancar():
     d['vez'] = d['abre']
 
 
-# banimentos (alternados e públicos)
+# ---------- banimentos (alternados e públicos)
 def _bans_ok(j):
     d = estado.duelo
     return d['fim_bans'][j] or len(d['bans'][j]) >= MAX_BANS
@@ -111,7 +111,7 @@ def fim_bans():
     _seguir_bans()
 
 
-# draft (escolhas alternadas, peças únicas)
+# ---------- draft (escolhas alternadas, peças únicas)
 def disponiveis():
     d = estado.duelo
     fora = set(d['bans']['a'] + d['bans']['v'] + d['exercitos']['a'] + d['exercitos']['v'])
@@ -167,7 +167,7 @@ def parar():
     _seguir_draft()
 
 
-# montagem do tabuleiro
+# ---------- montagem do tabuleiro
 def _iniciar_partida():
     d = estado.duelo
     n = random.choice(CFG['tamanhos_tabuleiro'])
@@ -269,7 +269,7 @@ def _comecar_batalha():
         _proxima_vez(outro(b['primeiro']))
 
 
-# batalha
+# ---------- batalha
 def _tem_jogada(j):
     b = _batalha()
     return any(xadrez.movimentos(b['pecas'], p, b['n']) for p in b['pecas'] if p['lado'] == LADO[j])
@@ -353,7 +353,17 @@ def proxima():
         _iniciar_partida()
 
 
-# o que o navegador recebe
+# ---------- o que o navegador recebe
+def _ameacas(b):
+    #Casas que o adversário de quem joga poderia alcançar (realce de alcance inimigo)
+    outro = LADO['v' if b['vez'] == 'a' else 'a']
+    casas = set()
+    for p in b['pecas']:
+        if p['lado'] == outro:
+            casas.update(xadrez.movimentos(b['pecas'], p, b['n']))
+    return sorted(casas)
+
+
 def visao():
     d = estado.duelo
     v = {k: d[k] for k in ('fase', 'ordem', 'abre', 'vez', 'bans', 'fim_bans', 'exercitos', 'gasto', 'fim_draft',
@@ -372,5 +382,6 @@ def visao():
         v['batalha'] = {'n': b['n'], 'pecas': pecas, 'zonas': b['zonas'], 'primeiro': b['primeiro'], 'montando': b['montando'],
                         'vez': b['vez'], 'rodadas': b['rodadas'], 'log': b['log'][-10:], 'resultado': b['resultado'],
                         'fase': b['fase'], 'posicoes': b['posicoes'],
-                        'jogadas': jogadas(b['vez']) if d['fase'] == 'batalha' else {}}
+                        'jogadas': jogadas(b['vez']) if d['fase'] == 'batalha' else {},
+                        'ameacas': _ameacas(b) if d['fase'] == 'batalha' else []}
     return v

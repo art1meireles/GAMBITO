@@ -37,7 +37,7 @@ function dPlacar(v) {
     <button class="bt cinza mini-bt" onclick="dSair()">Sair</button></div>`;
 }
 
-// sorteio
+//---------- sorteio
 function dSorteio(v) {
   const chips = v.ordem.map((j, i) => `<div class="d-chip revela ${cl(j)}" style="--i:${i + 1}"><small>Batalha ${i + 1}</small><b>${nomeJ(j)}</b></div>`).join('');
   return `<div class="caixa d-caixa"><h2 class="grande-titulo">SORTEIO</h2>
@@ -48,7 +48,7 @@ function dSorteio(v) {
     <button class="bt verde grande-bt" onclick="chamar('duelo_avancar')">Continuar para os banimentos</button></div>`;
 }
 
-// banimentos e draft (mesma paleta)
+//---------- banimentos e draft (mesma paleta)
 function dPaleta(v) {
   const ban = v.fase === 'banimentos';
   const j = v.vez;
@@ -116,7 +116,7 @@ function dRedesenharLista() {
 function dBanir() { const id = dPal.sel; dPal.sel = null; chamar('duelo_banir', { id: id }); }
 function dEscolher() { const id = dPal.sel; dPal.sel = null; chamar('duelo_escolher', { id: id }); }
 
-// montagem, batalha e resultado (mesmo tabuleiro)
+//---------- montagem, batalha e resultado (mesmo tabuleiro)
 function dLargura() {
   const z = escala();
   if (ehCelular()) return Math.max(240, Math.min(window.innerWidth - 16, window.innerHeight - 340 * z, 900) / z);
@@ -154,7 +154,10 @@ function dBatalha(v) {
       <div class="log">${b.log.slice().reverse().map(l => `<div>${l}</div>`).join('')}</div>
       <button class="bt verde grande-bt" onclick="chamar('duelo_proxima')">${ultima ? 'Ver resultado final' : 'Próxima batalha'}</button></div>`;
   }
-  return `${banner}<div class="d-corpo"><div class="d-tabuleiro">${dTabuleiro(v)}</div><div class="d-lateral">${lateral}</div></div>`;
+  const detalhe = painelDaPeca(b.pecas, i => b.pecas.find(p => (v.fase === 'montagem' ? p.linha + ',' + p.col === i.chave : p.uid === i.uid)),
+    p => 'Peça do ' + nomeJ(p.lado === 'j' ? 'a' : 'v'));
+  const alcance = v.fase === 'batalha' ? `<button class="bt cinza mini-bt" onclick="verAmeacas=!verAmeacas;desenhar()">${verAmeacas ? 'Esconder' : 'Mostrar'} alcance do adversário</button>` : '';
+  return `${banner}<div class="d-corpo"><div class="d-tabuleiro">${dTabuleiro(v)}<div class="d-sob">${alcance}</div>${larguraDetalhe() ? '' : detalhe}</div><div class="d-lateral">${lateral}${larguraDetalhe() ? detalhe : ''}</div></div>`;
 }
 
 function dTabuleiro(v) {
@@ -164,6 +167,7 @@ function dTabuleiro(v) {
   b.pecas.forEach(p => mapa[p.linha + ',' + p.col] = p);
   const destinos = v.fase === 'batalha' && dSel ? (b.jogadas[dSel] || []).map(d => d.join(',')) : [];
   const zona = v.fase === 'montagem' ? b.zonas[b.montando] : null;
+  const ameacas = new Set(verAmeacas && v.fase === 'batalha' ? b.ameacas.map(a => a.join(',')) : []);
   let html = `<div class="tabuleiro" style="grid-template-columns: repeat(${n}, ${tam}px); width:${tam * n}px">`;
   for (let l = 0; l < n; l++) {
     for (let c = 0; c < n; c++) {
@@ -174,6 +178,7 @@ function dTabuleiro(v) {
       if (v.fase === 'batalha') {
         if (chave === dSel) cls += ' selecionada';
         if (destinos.includes(chave)) cls += ' destino' + (p ? (p.lado === (b.vez === 'a' ? 'j' : 'i') ? ' troca' : ' captura') : '');
+        if (ameacas.has(chave)) cls += ' ameaca';
         clicavel = !!b.jogadas[chave] || destinos.includes(chave);
       }
       if (clicavel) cls += ' clicavel';
@@ -181,10 +186,10 @@ function dTabuleiro(v) {
       if (p) {
         const selo = iconesDosEfeitos(p.efeitos, p.escudo);
         conteudo = `<div class="peca"><span class="peca-${p.lado}" style="font-size:${tam * 0.75}px; line-height:1">${simbolo(p.copia || p.tipo)}</span>`
-                 + (selo ? `<span class="selo">${selo}</span>` : '') + '</div>';
+                 + (selo ? `<span class="selo">${selo}</span>` : '') + marcadoresDaPeca(p) + '</div>';
       }
       const titulo = p && p.id && E.catalogo[p.id] ? `${E.catalogo[p.id].nome}: ${E.catalogo[p.id].desc}` : '';
-      html += `<div class="${cls}" style="height:${tam}px" title="${titulo}" ${clicavel ? `onclick="dClicouCasa(${l},${c})"` : ''}>${conteudo}</div>`;
+      html += `<div class="${cls}" style="height:${tam}px" title="${titulo}" ${clicavel || p ? `onclick="dClicouCasa(${l},${c})"` : ''}>${conteudo}</div>`;
     }
   }
   return html + '</div>';
@@ -195,8 +200,10 @@ function dEscolherPeca(i) { dSel = (dSel === i ? null : i); desenhar(); }
 async function dClicouCasa(l, c) {
   const v = E.duelo, b = v.batalha, chave = l + ',' + c;
   const p = b.pecas.find(q => q.linha === l && q.col === c);
+  inspecionada = p ? { uid: p.uid, chave: chave } : null;
   if (v.fase === 'montagem') {
     if (p && p.dono === b.montando) { dSel = null; return chamar('duelo_tirar', { indice: p.indice }); }
+    if (p) return desenhar();  //peça do outro jogador: só mostra os detalhes
     if (dSel !== null) {
       const i = dSel;
       if (await chamar('duelo_colocar', { indice: i, linha: l, col: c })) dSel = null;
@@ -214,7 +221,7 @@ async function dClicouCasa(l, c) {
   }
 }
 
-// fim do match
+//---------- fim do match
 function dFim(v) {
   const a = v.pontos.a, vm = v.pontos.v;
   const ganhador = a > vm ? 'a' : (vm > a ? 'v' : null);
@@ -227,7 +234,7 @@ function dFim(v) {
     <button class="bt azul grande-bt" onclick="dSel=null;chamar('duelo_sair')">Voltar ao menu</button></div>`;
 }
 
-// sons (chamado pelo app.js depois de cada ação)
+//---------- sons (chamado pelo app.js depois de cada ação)
 function efeitosDoDuelo(acao, antes, depois) {
   const a = antes && antes.duelo, d = depois.duelo;
   if (!d) return;

@@ -61,7 +61,7 @@ def estado_para_o_navegador():
                     ms = xadrez.movimentos(pecas, p, b['n'])
                     if ms:
                         jogadas['%d,%d' % (p['linha'], p['col'])] = ms
-        ameacas = xadrez.casas_ameacadas(b) if b['ameacas'] and b['fase'] == 'jogando' else []
+        ameacas = xadrez.casas_ameacadas(b) if (b['ameacas'] or b.get('modo_teste')) and b['fase'] == 'jogando' else []
         limite = cartas.limite_de_rodadas()
         s['batalha'] = {'n': b['n'], 'pecas': pecas, 'posicoes': b['posicoes'], 'rodadas': b['rodadas'],
                         'log': b['log'][-12:], 'jogadas': jogadas, 'zona_inicio': b['zona_inicio'],
