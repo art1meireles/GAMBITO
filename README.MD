@@ -164,7 +164,7 @@ O botão **DUELO** do menu abre uma partida local para dois jogadores no mesmo a
 
 - **Sorteio:** no início do match, 10 sorteios definem quem monta primeiro em cada batalha, e outro sorteio define quem bane primeiro. Quem monta primeiro usa 3/5, 4/6 ou 5/7 do tabuleiro (conforme o tamanho 5×5, 6×6 ou 7×7), monta sem ver o adversário e faz o primeiro movimento. Quem monta depois vê as peças do outro e usa as 2 últimas linhas do seu lado.
 - **Banimentos:** cada jogador bane até 5 peças, alternando e de forma pública. As peças banidas ficam fora do draft.
-- **Draft:** cada jogador tem 20 moedas e escolhe peças alternadamente, sem repetir peças, até 4 por exército. Quem baniu primeiro escolhe por último. Peças com efeito de moedas não aparecem. O exército vale para o match inteiro, e as peças perdidas voltam a cada batalha.
+- **Draft:** cada jogador tem 40 moedas e escolhe peças alternadamente, sem repetir peças, até 4 por exército. Quem baniu primeiro escolhe por último. Peças com efeito de moedas não aparecem. O exército vale para o match inteiro, e as peças perdidas voltam a cada batalha.
 - **Pontuação:** vitória vale 1 ponto e empate vale meio ponto para cada. Quem não tem jogada perde a vez, e se nenhum dos dois puder jogar ou o limite de 40 rodadas for atingido, a batalha empata. Vence o match quem tiver mais pontos, e a igualdade termina em empate.
 
 O match fica salvo no navegador e continua se a aba for fechada.

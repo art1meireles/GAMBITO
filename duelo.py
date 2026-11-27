@@ -10,7 +10,7 @@ import xadrez
 
 CFG = dados.CONFIG
 PARTIDAS = 10    #batalhas por match
-ORCAMENTO = 20   #moedas de cada jogador no draft
+ORCAMENTO = 40   #moedas de cada jogador no draft
 MAX_PECAS = 4    #peças por exército
 MAX_BANS = 5     #banimentos por jogador
 JOGADORES = ('a', 'v')
@@ -49,7 +49,7 @@ def _batalha():
     return estado.duelo['batalha']
 
 
-# começo
+# ---------- começo
 def novo():
     estado.duelo = {
         'fase': 'sorteio',
@@ -73,7 +73,7 @@ def avancar():
     d['vez'] = d['abre']
 
 
-# banimentos (alternados e públicos)
+# ---------- banimentos (alternados e públicos)
 def _bans_ok(j):
     d = estado.duelo
     return d['fim_bans'][j] or len(d['bans'][j]) >= MAX_BANS
@@ -269,7 +269,7 @@ def _comecar_batalha():
         _proxima_vez(outro(b['primeiro']))
 
 
-# batalha
+# ---------- batalha
 def _tem_jogada(j):
     b = _batalha()
     return any(xadrez.movimentos(b['pecas'], p, b['n']) for p in b['pecas'] if p['lado'] == LADO[j])
@@ -355,7 +355,7 @@ def proxima():
         _iniciar_partida()
 
 
-# o que o navegador recebe
+# ---------- o que o navegador recebe
 def _ameacas(b):
     #Casas que o adversário de quem joga poderia alcançar (realce de alcance inimigo)
     outro = LADO['v' if b['vez'] == 'a' else 'a']
