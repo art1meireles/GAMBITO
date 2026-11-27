@@ -21,6 +21,7 @@ let pendenteSubstituir = null; // carta do pacote aguardando a escolha da carta 
 let ultimaCompra = null;
 let verColecao = false;
 let verComoJogar = false;
+let verModoDuelo = false;     //menu do duelo: dois jogadores ou contra a máquina
 let lateralAberta = false;    //no celular: painel de cartas aberto ou fechado
 let telaAnterior = null;
 let larguraAnterior = window.innerWidth;
@@ -31,7 +32,7 @@ function ehCelular() { return window.matchMedia('(max-width: 820px), (pointer: c
 //no celular em pé, aumenta tudo conforme a largura da tela (1 = celular comum; maior = tela larga ou "site para computador")
 function escala() { return ehCelular() ? Math.min(2.4, Math.max(1, window.innerWidth / 400)) : 1; }
 
-//---------- sons (arquivos em /sons/) e animações de fim de batalha
+//sons (arquivos em /sons/) e animações de fim de batalha
 const SONS = {};
 ['piece1', 'piece2', 'promote', 'win', 'lose'].forEach(nome => {
   SONS[nome] = new Audio('/sons/' + nome + '.wav');
@@ -119,7 +120,7 @@ function iconesDosEfeitos(efeitos, escudo) {
   return icones;
 }
 
-//---------- detalhes e sinais das peças
+//detalhes e sinais das peças
 const NOME_TIPO = { K: 'Rei', Q: 'Rainha', R: 'Torre', B: 'Bispo', N: 'Cavalo', P: 'Peão' };
 
 function textoDoEfeito(e) {
@@ -220,7 +221,7 @@ function avisar(texto) {
   setTimeout(() => a.style.display = 'none', 2800);
 }
 
-//---------- tabuleiro
+//tabuleiro
 function desenharTabuleiro(b) {
   const n = b.n;
   const posicionando = b.fase === 'posicionando';
@@ -271,7 +272,7 @@ function cartaExercito(chave, i, extra) {
     <div class="icone">${simbolo(p.tipo)}</div>${p.nome}${marcado}<small class="so-celular">${p.desc}</small></div>`;
 }
 
-//---------- cartas (permanentes e consumíveis)
+//cartas (permanentes e consumíveis)
 function cartaMini(id, botao) {
   const c = E.cartas_catalogo[id];
   return `<div class="carta mini r-${c.raridade}" title="${c.desc}"><b>${c.nome}</b>
@@ -330,7 +331,7 @@ async function usarCarta(i) {
   await chamar('usar_carta', { indice: i });
 }
 
-//---------- menu lateral (parecido com o do Balatro)
+//menu lateral (parecido com o do Balatro)
 function lateral(titulo, info) {
   return `<aside class="lateral${lateralAberta ? ' aberto' : ''}">
     <div class="lat-titulo">${titulo}</div>
@@ -361,7 +362,7 @@ function comLateral(titulo, info, principal) {
   return `<div class="layout">${lateral(titulo, info)}<main class="central">${avisoUso}${principal}</main></div>`;
 }
 
-//---------- telas
+//telas
 function desenhar() {
   document.documentElement.style.setProperty('--z', escala());
   if (E.tela === 'duelo') return telaDuelo(document.getElementById('tela'));  //modo duelo (duelo.js)
@@ -372,13 +373,14 @@ function desenhar() {
   }
   const topo = document.getElementById('topo');
   const tela = document.getElementById('tela');
-  const noMenu = E.tela === 'menu' && !verColecao && !verComoJogar;
+  const noMenu = E.tela === 'menu' && !verColecao && !verComoJogar && !verModoDuelo;
   const fim = E.tela === 'derrota';
   document.body.className = noMenu ? 'menu' : (verColecao || fim ? '' : 'run');
   const comoJogar = E.tela === 'menu' && verComoJogar && !verColecao;
   if (comoJogar) document.body.className = '';
   topo.innerHTML = (verColecao || comoJogar) ? '<h2>GAMBITO</h2>' : '';
 
+  if (E.tela === 'menu' && verModoDuelo && !verColecao && !comoJogar) return telaModoDuelo(tela);
   if (comoJogar) return telaComoJogar(tela);
   if (verColecao) return telaColecao(tela);
   if (E.tela === 'menu') return telaMenu(tela);
@@ -395,8 +397,23 @@ function telaMenu(tela) {
       <button class="bt azul grande-bt" onclick="chamar('novo')">JOGAR</button>
       <button class="bt laranja grande-bt" onclick="verComoJogar=true;desenhar()">COMO JOGAR</button>
       <button class="bt verde grande-bt" onclick="verColecao=true;desenhar()">COLEÇÃO</button>
-      <button class="bt vermelho grande-bt" onclick="chamar('duelo_novo')">DUELO</button></div>`;
+      <button class="bt vermelho grande-bt" onclick="verModoDuelo=true;desenhar()">DUELO</button></div>`;
   tela.innerHTML = `<div class="menu-conteudo">${titulo}${meio}</div>`;
+}
+
+function telaModoDuelo(tela) {
+  document.body.className = '';
+  document.getElementById('topo').innerHTML = '<h2>DUELO</h2>';
+  tela.innerHTML = `<div class="como-jogar"><button class="bt cinza" onclick="verModoDuelo=false;desenhar()">← Voltar</button>
+    <div class="caixa d-caixa"><h2 class="grande-titulo">Escolha o modo</h2>
+    <p class="dica">Um match de 10 batalhas, com banimentos e draft antes.</p>
+    <div class="lista centro"><button class="bt vermelho grande-bt" onclick="verModoDuelo=false;chamar('duelo_novo')">2 JOGADORES<br><small>no mesmo aparelho</small></button></div>
+    <h3>Contra a máquina</h3>
+    <div class="lista centro">
+      <button class="bt verde grande-bt" onclick="verModoDuelo=false;chamar('duelo_novo', { maquina: true, nivel: 0 })">FÁCIL</button>
+      <button class="bt laranja grande-bt" onclick="verModoDuelo=false;chamar('duelo_novo', { maquina: true, nivel: 1 })">MÉDIO</button>
+      <button class="bt azul grande-bt" onclick="verModoDuelo=false;chamar('duelo_novo', { maquina: true, nivel: 2 })">DIFÍCIL</button></div>
+    <p class="dica" style="margin-top:14px">Você joga de azul e a máquina de vermelho. Ela bane, escolhe peças, monta o tabuleiro e joga sozinha.</p></div></div>`;
 }
 
 function telaComoJogar(tela) {
@@ -614,7 +631,7 @@ function telaColecao(tela) {
   tela.innerHTML = html;
 }
 
-//---------- cliques
+//cliques
 async function clicouCasa(l, c) {
   const chave = l + ',' + c;
   const b = E.batalha;

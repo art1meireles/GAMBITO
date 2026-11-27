@@ -74,7 +74,8 @@ def estado_para_o_navegador():
 
 def executar_duelo(acao, d):
     if acao == 'duelo_novo':
-        duelo.novo()
+        duelo.novo(bool(d.get('maquina')), int(d.get('nivel', 1)))
+        duelo.rodar_bot()
         return
     if estado.duelo is None:
         raise ValueError('Não há duelo em andamento')
@@ -104,6 +105,8 @@ def executar_duelo(acao, d):
         duelo.proxima()
     else:
         raise ValueError('Ação desconhecida')
+    if estado.duelo is not None:
+        duelo.rodar_bot()  #se for contra a máquina, ela joga até chegar a vez da pessoa
 
 
 def executar(acao, d):

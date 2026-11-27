@@ -1,4 +1,4 @@
-#Modo DUELO: dois jogadores no mesmo aparelho (azul e vermelho), um match de 10 batalhas
+#Modo DUELO: dois jogadores no mesmo aparelho (azul e vermelho) ou azul contra a máquina (vermelho), um match de 10 batalhas
 #Fluxo: sorteio -> banimentos -> draft -> (montagem -> batalha -> resultado) x 10 -> fim
 #O estado do duelo fica no navegador (como a run) e viaja com cada pedido; o servidor só valida as regras
 import random
@@ -17,6 +17,9 @@ JOGADORES = ('a', 'v')
 LADO = {'a': 'j', 'v': 'i'}  #azul joga embaixo (lado 'j') e vermelho em cima (lado 'i')
 NOME = {'a': 'Azul', 'v': 'Vermelho'}
 COMUNS = ['P:comum', 'N:comum', 'B:comum', 'R:comum', 'K:comum']  #peças simples que não aparecem na loja, mas entram no draft
+BOT = 'v'  #a máquina joga de vermelho (lado 'i', o mesmo lado dos inimigos da run)
+NIVEIS = {0: ('Fácil', 0.55, 0), 1: ('Médio', 0.8, 1), 2: ('Difícil', 1.0, 2)}  #nome, chance de jogar bem, olhar à frente
+PESO_TIPO = {'P': 0.8, 'N': 1.0, 'B': 1.0, 'R': 1.1, 'Q': 1.15, 'K': 0.7}  #o quanto a máquina gosta de cada tipo no draft
 FASES = ('sorteio', 'banimentos', 'draft', 'montagem', 'batalha', 'resultado', 'fim')
 
 
@@ -26,6 +29,11 @@ def _sem_moedas(peca):
 
 #peças que podem ser banidas e escolhidas no draft (as de efeito de moeda ficam escondidas)
 ELEGIVEIS = [id_ for id_, p in dados.CATALOGO.items() if (p['loja'] or id_ in COMUNS) and _sem_moedas(p)]
+
+
+def nome(j):
+    #contra a máquina, o vermelho aparece como Máquina nos textos
+    return 'Máquina' if j == 'v' and estado.duelo and estado.duelo.get('bot') else NOME[j]
 
 
 def outro(j):
@@ -49,9 +57,10 @@ def _batalha():
     return estado.duelo['batalha']
 
 
-# ---------- começo
-def novo():
+#começo
+def novo(maquina=False, nivel=1):
     estado.duelo = {
+        'bot': BOT if maquina else None, 'nivel': nivel if nivel in NIVEIS else 1,
         'fase': 'sorteio',
         'ordem': [random.choice(JOGADORES) for _ in range(PARTIDAS)],  #quem monta primeiro (e joga primeiro) em cada batalha
         'abre': random.choice(JOGADORES),                               #quem bane primeiro (e escolhe por último no draft)
@@ -73,7 +82,7 @@ def avancar():
     d['vez'] = d['abre']
 
 
-# ---------- banimentos (alternados e públicos)
+#banimentos (alternados e públicos)
 def _bans_ok(j):
     d = estado.duelo
     return d['fim_bans'][j] or len(d['bans'][j]) >= MAX_BANS
@@ -111,7 +120,7 @@ def fim_bans():
     _seguir_bans()
 
 
-# ---------- draft (escolhas alternadas, peças únicas)
+#draft (escolhas alternadas, peças únicas)
 def disponiveis():
     d = estado.duelo
     fora = set(d['bans']['a'] + d['bans']['v'] + d['exercitos']['a'] + d['exercitos']['v'])
@@ -167,7 +176,7 @@ def parar():
     _seguir_draft()
 
 
-# ---------- montagem do tabuleiro
+#montagem do tabuleiro
 def _iniciar_partida():
     d = estado.duelo
     n = random.choice(CFG['tamanhos_tabuleiro'])
@@ -179,7 +188,7 @@ def _iniciar_partida():
         zonas[j] = [n - fundo[j], n] if LADO[j] == 'j' else [0, fundo[j]]  #[primeira linha, última linha + 1]
     d['batalha'] = {'n': n, 'pecas': [], 'posicoes': {'a': {}, 'v': {}}, 'zonas': zonas, 'primeiro': primeiro,
                     'montando': primeiro, 'vez': primeiro, 'rodadas': 0, 'turnos': 0, 'movs': 0, 'log': [],
-                    'fase': 'montando', 'resultado': None, 'nomes': {'j': NOME['a'], 'i': NOME['v']},
+                    'fase': 'montando', 'resultado': None, 'nomes': {'j': nome('a'), 'i': nome('v')},
                     # campos que o motor de xadrez e os efeitos esperam encontrar
                     'bonus': 0, 'capturas': 0, 'perdidas': [], 'proxima_captura': 0, 'serie': 0}
     d['fase'] = 'montagem'
@@ -263,13 +272,13 @@ def _comecar_batalha():
     b['fase'] = 'jogando'
     efeitos.no_inicio_da_batalha(b)
     d['fase'] = 'batalha'
-    b['log'].append('A batalha começou! %s joga primeiro.' % NOME[b['primeiro']])
+    b['log'].append('A batalha começou! %s joga primeiro.' % nome(b['primeiro']))
     b['vez'] = b['primeiro']
     if not _tem_jogada(b['primeiro']):
         _proxima_vez(outro(b['primeiro']))
 
 
-# ---------- batalha
+#batalha
 def _tem_jogada(j):
     b = _batalha()
     return any(xadrez.movimentos(b['pecas'], p, b['n']) for p in b['pecas'] if p['lado'] == LADO[j])
@@ -294,8 +303,8 @@ def _proxima_vez(quem_jogou):
         b['vez'] = prox
     elif _tem_jogada(quem_jogou):
         b['vez'] = quem_jogou
-        b['log'].append('%s não tem jogadas e perde a vez.' % NOME[prox])
-        b['aviso'] = '%s não tem jogadas e perde a vez.' % NOME[prox]
+        b['log'].append('%s não tem jogadas e perde a vez.' % nome(prox))
+        b['aviso'] = '%s não tem jogadas e perde a vez.' % nome(prox)
     else:
         _fim(None, 'Nenhum jogador consegue se mover.')
 
@@ -327,14 +336,15 @@ def mover(de, para):
         raise ValueError('Movimento ilegal')
     b['movs'] += 1
     b['aviso'] = ''
+    b['ultimo'] = {'de': [p['linha'], p['col']], 'para': [para[0], para[1]], 'lado': p['lado']}  #para o navegador destacar a última jogada
     xadrez.mover(b, p, para[0], para[1])
     azul, vermelho = xadrez.contar(b, 'j'), xadrez.contar(b, 'i')
     if not azul and not vermelho:
         return _fim(None, 'Todas as peças caíram.')
     if not vermelho:
-        return _fim('a', 'O Vermelho ficou sem peças.')
+        return _fim('a', '%s ficou sem peças.' % nome('v'))
     if not azul:
-        return _fim('v', 'O Azul ficou sem peças.')
+        return _fim('v', '%s ficou sem peças.' % nome('a'))
     if b['movs'] % 2 == 0:  #terminou uma rodada (os dois jogaram)
         b['rodadas'] += 1
         b['turnos'] = b['rodadas']
@@ -355,7 +365,7 @@ def proxima():
         _iniciar_partida()
 
 
-# ---------- o que o navegador recebe
+#o que o navegador recebe
 def _ameacas(b):
     #Casas que o adversário de quem joga poderia alcançar (realce de alcance inimigo)
     outro = LADO['v' if b['vez'] == 'a' else 'a']
@@ -370,8 +380,9 @@ def visao():
     d = estado.duelo
     v = {k: d[k] for k in ('fase', 'ordem', 'abre', 'vez', 'bans', 'fim_bans', 'exercitos', 'gasto', 'fim_draft',
                            'pontos', 'resultados', 'partida')}
-    v.update({'total': PARTIDAS, 'orcamento': ORCAMENTO, 'max_pecas': MAX_PECAS, 'max_bans': MAX_BANS,
-              'elegiveis': ELEGIVEIS, 'nomes': NOME, 'limite': CFG['max_rodadas']})
+    v.update({'bot': d.get('bot'), 'nivel': d.get('nivel', 1), 'nome_nivel': NIVEIS[d.get('nivel', 1)][0] if d.get('bot') else '',
+              'total': PARTIDAS, 'orcamento': ORCAMENTO, 'max_pecas': MAX_PECAS, 'max_bans': MAX_BANS,
+              'elegiveis': ELEGIVEIS, 'nomes': {j: nome(j) for j in JOGADORES}, 'limite': CFG['max_rodadas']})
     if d['fase'] == 'draft':
         v['disponiveis'] = disponiveis()
         v['restante'] = {j: restante(j) for j in JOGADORES}
@@ -383,7 +394,77 @@ def visao():
             pecas = [peca_montada(j, int(i), l, c) for j in JOGADORES for i, (l, c) in b['posicoes'][j].items()]
         v['batalha'] = {'n': b['n'], 'pecas': pecas, 'zonas': b['zonas'], 'primeiro': b['primeiro'], 'montando': b['montando'],
                         'vez': b['vez'], 'rodadas': b['rodadas'], 'log': b['log'][-10:], 'resultado': b['resultado'],
-                        'fase': b['fase'], 'posicoes': b['posicoes'], 'aviso': b.get('aviso', ''),
+                        'fase': b['fase'], 'posicoes': b['posicoes'], 'aviso': b.get('aviso', ''), 'ultimo': b.get('ultimo'),
                         'jogadas': jogadas(b['vez']) if d['fase'] == 'batalha' else {},
                         'ameacas': _ameacas(b) if d['fase'] == 'batalha' else []}
     return v
+
+
+
+#a máquina (jogador vermelho)
+def _forca(id_):
+    p = dados.CATALOGO[id_]
+    return p['preco'] * PESO_TIPO[p['tipo']]
+
+
+def _bot_banir():
+    d = estado.duelo
+    if len(d['bans'][BOT]) >= MAX_BANS:
+        return fim_bans()
+    livres = [i for i in ELEGIVEIS if i not in d['bans']['a'] + d['bans']['v']]
+    if not livres:
+        return fim_bans()
+    livres.sort(key=lambda i: -_forca(i) + random.random() * 3)  #bane as mais fortes (com um pouco de sorte, para variar)
+    banir(livres[0])
+
+
+def _bot_escolher():
+    d = estado.duelo
+    resto = restante(BOT)
+    faltam = MAX_PECAS - len(d['exercitos'][BOT])
+    livres = [i for i in disponiveis() if dados.CATALOGO[i]['preco'] <= resto]
+    if not livres:
+        return parar()
+    reserva = min(dados.CATALOGO[i]['preco'] for i in livres) * (faltam - 1)  #guarda moedas para as peças que faltam
+    cabem = [i for i in livres if dados.CATALOGO[i]['preco'] <= resto - reserva] or livres
+    alvo = resto / faltam
+    if faltam > 1:
+        cabem = [i for i in cabem if dados.CATALOGO[i]['preco'] <= alvo * 1.5 + 1] or cabem  #não gasta tudo numa peça só
+    cabem.sort(key=lambda i: -_forca(i) + random.random() * 1.5)
+    escolher(cabem[0])
+
+
+def _bot_jogar():
+    b = _batalha()
+    _, inteligencia, olhar = NIVEIS[estado.duelo.get('nivel', 1)]
+    visao_ia = {'pecas': b['pecas'], 'n': b['n']}
+    opcoes = [(p, l, c) for p in b['pecas'] if p['lado'] == LADO[BOT] for (l, c) in xadrez.movimentos(b['pecas'], p, b['n'])]
+    if not opcoes:
+        return
+    if random.random() >= inteligencia:
+        p, l, c = xadrez._jogada_simples(visao_ia, opcoes, False)
+    elif olhar >= 2:
+        p, l, c = xadrez._melhor_jogada_profunda(visao_ia, opcoes)
+    else:
+        p, l, c = xadrez._melhor_jogada(visao_ia, opcoes)
+    mover([p['linha'], p['col']], [l, c])
+
+
+def rodar_bot():
+    #Faz as jogadas da máquina até chegar a vez de uma pessoa (ou ao fim do duelo)
+    d = estado.duelo
+    if not d or not d.get('bot'):
+        return
+    for _ in range(500):
+        fase, b = d['fase'], d['batalha']
+        if fase == 'banimentos' and d['vez'] == BOT:
+            _bot_banir()
+        elif fase == 'draft' and d['vez'] == BOT:
+            _bot_escolher()
+        elif fase == 'montagem' and b['montando'] == BOT:
+            auto()
+            pronto()
+        elif fase == 'batalha' and b['vez'] == BOT:
+            _bot_jogar()
+        else:
+            return

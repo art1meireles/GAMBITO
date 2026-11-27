@@ -160,12 +160,14 @@ A tela **Coleção** mostra as peças e cartas já descobertas (as que faltam ap
 
 ## Modo Duelo
 
-O botão **DUELO** do menu abre uma partida local para dois jogadores no mesmo aparelho: **Azul** (embaixo) e **Vermelho** (em cima). O match tem 10 batalhas e não usa cartas nem moedas.
+O botão **DUELO** do menu abre uma partida para dois jogadores no mesmo aparelho ou contra a máquina: **Azul** (embaixo) e **Vermelho** (em cima). O match tem 10 batalhas e não usa cartas nem moedas.
 
 - **Sorteio:** no início do match, 10 sorteios definem quem monta primeiro em cada batalha, e outro sorteio define quem bane primeiro. Quem monta primeiro usa 3/5, 4/6 ou 5/7 do tabuleiro (conforme o tamanho 5×5, 6×6 ou 7×7), monta sem ver o adversário e faz o primeiro movimento. Quem monta depois vê as peças do outro e usa as 2 últimas linhas do seu lado.
 - **Banimentos:** cada jogador bane até 5 peças, alternando e de forma pública. As peças banidas ficam fora do draft.
 - **Draft:** cada jogador tem 40 moedas e escolhe peças alternadamente, sem repetir peças, até 4 por exército. Quem baniu primeiro escolhe por último. Peças com efeito de moedas não aparecem. O exército vale para o match inteiro, e as peças perdidas voltam a cada batalha.
 - **Pontuação:** vitória vale 1 ponto e empate vale meio ponto para cada. Quem não tem jogada perde a vez, e se nenhum dos dois puder jogar ou o limite de 40 rodadas for atingido, a batalha empata. Vence o match quem tiver mais pontos, e a igualdade termina em empate.
+
+**Contra a máquina:** o jogador fica com o Azul e a máquina com o Vermelho, em três níveis (Fácil, Médio e Difícil). A máquina bane as peças mais fortes, escolhe um exército que cabe nas 40 moedas, monta o tabuleiro e joga com a mesma inteligência dos inimigos da run: o nível define a chance de jogar bem e quanto ela olha à frente. As duas últimas casas movimentadas ficam destacadas no tabuleiro, e a revanche mantém o modo e o nível.
 
 O match fica salvo no navegador e continua se a aba for fechada.
 

@@ -18,6 +18,7 @@ body { background: #151826; color: #eee; font-family: sans-serif; margin: 0; pad
   .clara { background: #e6d3ae; } .escura { background: #a67c52; }
   .minha-zona { box-shadow: inset 0 0 0 100px rgba(80,140,220,.25); }
   .selecionada { outline: 4px solid #e8b84a; outline-offset: -4px; }
+  .ultima { box-shadow: inset 0 0 0 200px rgba(255, 185, 0, .6); }  /*casas da última jogada: preenchimento amarelo, diferente do contorno de seleção*/
   .destino { cursor: pointer; }
   .destino::after { content: ''; position: absolute; width: 30%; height: 30%; border-radius: 50%; background: rgba(30,150,60,.7); }
   .destino.captura::after { width: 85%; height: 85%; background: none; border: 5px solid rgba(220,60,60,.9); }
@@ -47,7 +48,7 @@ body { background: #151826; color: #eee; font-family: sans-serif; margin: 0; pad
 .casa.clicavel { cursor: pointer; }
 h4 { margin: 14px 0 6px; }
 
-/*===== MENU ESTILO BALATRO =====*/
+/*MENU ESTILO BALATRO*/
 body.menu { padding: 0; overflow: hidden; }
 .menu-fundo { position: fixed; inset: -60%; z-index: 0; background-color: #3fbf5a;
   background:
@@ -92,7 +93,7 @@ body.menu { padding: 0; overflow: hidden; }
 .painel-mini small { font-size: 12px; color: #9fd; }
 .painel-mini.idioma { min-width: 0; }
 
-/*===== TEMA BALATRO EM TODAS AS TELAS =====*/
+/*TEMA BALATRO EM TODAS AS TELAS*/
 body { background: #2f6b2a; font-family: 'Pixelify Sans', 'Courier New', monospace; font-size: 16px; }
 #topo, #tela { position: relative; z-index: 2; }
 body:not(.menu) .menu-fundo { opacity: .6; animation-duration: 60s; }
@@ -121,7 +122,7 @@ button.principal { background: #1d7cf2; color: #fff; box-shadow: 0 4px 0 #0d4aa0
 .sub { color: #9fd; }
 .preco { color: #f0b030; text-shadow: 1px 1px 0 #000; }
 
-/*===== LAYOUT COM MENU LATERAL =====*/
+/*LAYOUT COM MENU LATERAL*/
 #topo:empty { display: none; }
 body.run { padding: 0; }
 .layout { display: flex; min-height: 100vh; }
@@ -191,7 +192,7 @@ body.run { padding: 0; }
 .barra-botoes .bt { width: 280px; padding-left: 0; padding-right: 0; }
 
 
-/*===== CELULAR E TELAS PEQUENAS =====*/
+/*CELULAR E TELAS PEQUENAS*/
 .lat-toggle { display: none; }
 .lat-corpo { display: contents; }
 .so-celular, .topo-uso { display: none; }
@@ -313,7 +314,7 @@ body.run { padding: 0; }
 .teste-tabela small { color: #b8cccc; }
 .teste-resultado { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 30px; }
 
-/*===== MODO DUELO (azul x vermelho) =====*/
+/*MODO DUELO (azul x vermelho)*/
 .c-a { --cor: #2f7bff; --cor-clara: #8fc0ff; --cor-escura: #0e2f78; }
 .c-v { --cor: #e8403c; --cor-clara: #ff9b96; --cor-escura: #7a1512; }
 .c-e { --cor: #6b7a7d; --cor-clara: #cfdadc; --cor-escura: #2c3a3d; }
@@ -370,7 +371,7 @@ td.c-a { color: #6fb0ff; font-weight: 700; } td.c-v { color: #ff7a74; font-weigh
   .d-banner { font-size: 15px; padding: 8px 10px; } .d-resultado h2 { font-size: 22px; }
 }
 
-/*===== DETALHES E SINAIS DAS PEÇAS =====*/
+/*DETALHES E SINAIS DAS PEÇAS*/
 .marca { position: absolute; font-size: 11px; line-height: 1; font-weight: 700; padding: 2px 4px; border-radius: 8px; color: #fff; text-shadow: none; pointer-events: none; z-index: 4; }
 .m-nivel { top: 1px; left: 2px; background: #534AB7; }
 .m-espera { bottom: 1px; left: 2px; background: #854F0B; }

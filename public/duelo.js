@@ -6,7 +6,7 @@ let dPal = { busca: '', tipo: '', sel: null };  //paleta de banimentos e draft: 
 let dSel = null;                                //montagem: índice da peça do exército; batalha: casa "linha,col"
 
 const cl = j => (j === 'a' ? 'c-a' : 'c-v');    //classe de cor do jogador
-const nomeJ = j => E.duelo.nomes[j];
+const nomeJ = j => E.duelo.nomes[j];  //contra a máquina, o servidor já manda o vermelho como Máquina
 const meio = p => (p % 1 ? Math.floor(p) + '½' : String(p));  //4.5 vira 4½
 
 function telaDuelo(tela) {
@@ -32,7 +32,7 @@ async function dReiniciar() {
   const v = E.duelo;
   if (v.fase !== 'fim' && !confirm('Reiniciar o duelo? O match atual será perdido e um novo sorteio começa.')) return;
   dSel = null; dPal = { busca: '', tipo: '', sel: null }; inspecionada = null;
-  await chamar('duelo_novo');
+  await chamar('duelo_novo', v.bot ? { maquina: true, nivel: v.nivel } : {});  //mantém o modo (e o nível) na revanche
 }
 
 function dPlacar(v) {
@@ -40,12 +40,12 @@ function dPlacar(v) {
     || `Batalha ${v.partida + 1} de ${v.total}`;
   return `<div class="d-placar"><div class="d-lado c-a">AZUL <b>${meio(v.pontos.a)}</b></div>
     <div class="d-centro">${meioTexto}</div>
-    <div class="d-lado c-v"><b>${meio(v.pontos.v)}</b> VERMELHO</div>
+    <div class="d-lado c-v"><b>${meio(v.pontos.v)}</b> ${v.bot ? 'MÁQUINA (' + v.nome_nivel.toUpperCase() + ')' : 'VERMELHO'}</div>
     <button class="bt cinza mini-bt" onclick="dReiniciar()">${v.fase === 'fim' ? 'Revanche' : 'Reiniciar'}</button>
     <button class="bt cinza mini-bt" onclick="dSair()">Sair</button></div>`;
 }
 
-//---------- sorteio
+//sorteio
 function dSorteio(v) {
   const chips = v.ordem.map((j, i) => `<div class="d-chip revela ${cl(j)}" style="--i:${i + 1}"><small>Batalha ${i + 1}</small><b>${nomeJ(j)}</b></div>`).join('');
   return `<div class="caixa d-caixa"><h2 class="grande-titulo">SORTEIO</h2>
@@ -56,7 +56,7 @@ function dSorteio(v) {
     <button class="bt verde grande-bt" onclick="chamar('duelo_avancar')">Continuar para os banimentos</button></div>`;
 }
 
-//---------- banimentos e draft (mesma paleta)
+//banimentos e draft (mesma paleta)
 function dPaleta(v) {
   const ban = v.fase === 'banimentos';
   const j = v.vez;
@@ -124,7 +124,7 @@ function dRedesenharLista() {
 function dBanir() { const id = dPal.sel; dPal.sel = null; chamar('duelo_banir', { id: id }); }
 function dEscolher() { const id = dPal.sel; dPal.sel = null; chamar('duelo_escolher', { id: id }); }
 
-//---------- montagem, batalha e resultado (mesmo tabuleiro)
+//montagem, batalha e resultado (mesmo tabuleiro)
 function dLargura() {
   const z = escala();
   if (ehCelular()) return Math.max(240, Math.min(window.innerWidth - 16, window.innerHeight - 340 * z, 900) / z);
@@ -152,7 +152,7 @@ function dBatalha(v) {
   } else if (v.fase === 'batalha') {
     banner = `${b.aviso ? `<div class="aviso-vez">${b.aviso}</div>` : ''}<div class="d-banner ${cl(b.vez)}">Vez do <b>${nomeJ(b.vez)}</b> · rodada ${b.rodadas + 1} de ${v.limite}</div>`;
     lateral = `<div class="caixa"><div class="rotulo">Esta batalha</div><small>${nomeJ(b.primeiro)} montou e joga primeiro · tabuleiro ${b.n}×${b.n}</small>
-      <div class="rotulo">Legenda</div><small>● movimento · ○ vermelho: captura · ○ azul tracejado: troca de lugar</small>
+      <div class="rotulo">Legenda</div><small>● movimento · ○ vermelho: captura · ○ azul tracejado: troca de lugar · casas amarelas: última jogada</small>
       <div class="rotulo">Registro</div><div class="log">${b.log.slice().reverse().map(l => `<div>${l}</div>`).join('')}</div></div>`;
   } else {  //resultado da batalha
     const r = b.resultado, ultima = v.partida + 1 >= v.total;
@@ -186,6 +186,7 @@ function dTabuleiro(v) {
       if (zona && l >= zona[0] && l < zona[1]) { cls += ' zona-' + b.montando; clicavel = true; }
       if (v.fase === 'batalha') {
         if (chave === dSel) cls += ' selecionada';
+        if (b.ultimo && (chave === b.ultimo.de.join(',') || chave === b.ultimo.para.join(','))) cls += ' ultima';  //última jogada (a da máquina, por exemplo)
         if (destinos.includes(chave)) cls += ' destino' + (p ? (p.lado === (b.vez === 'a' ? 'j' : 'i') ? ' troca' : ' captura') : '');
         if (ameacas.has(chave)) cls += ' ameaca';
         clicavel = !!b.jogadas[chave] || destinos.includes(chave);
@@ -230,7 +231,7 @@ async function dClicouCasa(l, c) {
   }
 }
 
-//---------- fim do match
+//fim do match
 function dFim(v) {
   const a = v.pontos.a, vm = v.pontos.v;
   const ganhador = a > vm ? 'a' : (vm > a ? 'v' : null);
@@ -244,7 +245,7 @@ function dFim(v) {
     <button class="bt azul grande-bt" onclick="dSel=null;chamar('duelo_sair')">Voltar ao menu</button></div></div>`;
 }
 
-//---------- sons (chamado pelo app.js depois de cada ação)
+//sons (chamado pelo app.js depois de cada ação)
 function efeitosDoDuelo(acao, antes, depois) {
   const a = antes && antes.duelo, d = depois.duelo;
   if (!d) return;
